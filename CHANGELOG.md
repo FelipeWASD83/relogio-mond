@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1 (01/11/2026)
+
+**Mudou**
+
+- O relógio desce na tela: `altura` padrão de 0.37 para 0.44. Quem já tinha o `config.json` mantém o valor que estava lá.
+
 ## 1.1.0 (01/11/2026)
 
 **Novo**

@@ -42,7 +42,7 @@ No `config.json`:
 | Campo | Para que serve | Padrão |
 |---|---|---|
 | `escala` | tamanho (1 = pensado para 3440x1440 a 125%) | `1.0` |
-| `altura` | onde fica o centro do relógio, em fração da altura da tela (menor sobe) | `0.37` |
+| `altura` | onde fica o centro do relógio, em fração da altura da tela (menor sobe) | `0.44` |
 | `idioma` | `auto`, `pt` ou `en` | `auto` |
 | `formato24h` | hora de 24 horas | `true` |
 | `barras` | quantas barras no visualizador | `56` |

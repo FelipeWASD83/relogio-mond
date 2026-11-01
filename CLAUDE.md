@@ -57,7 +57,7 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
   letras é medido entre os contornos (`BuildGeometry().Bounds`), não pela largura de avanço da fonte.
   Vírgula e ponto grudam na letra de antes. Valores atuais (1.0.2): dia 100 com vão 0.3; data e hora
   28 e clima 19, vão 0.2. Barras com 20 de altura (1.1.0, ele pediu menores três vezes), 30 de
-  margem em cima e sem pontinho de pico. `altura` padrão 0.37 (o bloco da música desceu).
+  margem em cima e sem pontinho de pico. `altura` padrão 0.44 (era 0.40; na 1.1.0 subiu para 0.37 e ele mandou descer, 1.1.1).
 - **Barras fortes pelo ganho automático** (1.1.0, ele achou o visualizador fraco): a faixa mais forte
   dos últimos segundos (meia-vida ~4 s, piso 0,3 contra ruído) vira o topo, e uma curva de 1,3 dá
   contraste. Antes o nível dependia do volume que chegava no loopback. Sem teste com música real
