@@ -56,6 +56,8 @@ public sealed class JanelaRelogio : Window
         _m.PediuProxima += _midia.Proxima;
 
         SourceInitialized += AoIniciarFonte;
+        // o tamanho muda (clima que chega, escala, idioma): o centro continua onde a configuração manda
+        SizeChanged += (_, _) => Posicionar();
         Loaded += async (_, _) =>
         {
             Aplicar(_cfg);
@@ -170,7 +172,7 @@ public sealed class JanelaRelogio : Window
             _ultimoClima = agora;
             _ = AtualizarClima();
         }
-        _m.AtualizarRelogio(agora, _cfg.Formato24h, _cfg.Clima ? _clima.Texto() : "");
+        _m.AtualizarRelogio(agora, _cfg.Formato24h, _cfg.Clima ? _clima.Texto() : "", _cfg.Clima);
 
         if (agora - _ultimaMidia > TimeSpan.FromMilliseconds(480) && !_atualizandoMidia)
         {
@@ -186,7 +188,7 @@ public sealed class JanelaRelogio : Window
     async System.Threading.Tasks.Task AtualizarClima()
     {
         if (await _clima.Atualizar(_cfg.Latitude, _cfg.Longitude))
-            _m.AtualizarRelogio(DateTime.Now, _cfg.Formato24h, _clima.Texto());
+            _m.AtualizarRelogio(DateTime.Now, _cfg.Formato24h, _clima.Texto(), true);
     }
 
     async System.Threading.Tasks.Task AtualizarMidia()

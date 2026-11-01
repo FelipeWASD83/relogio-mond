@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.2 (01/11/2026)
+
+**Mudou**
+
+- O bloco da música inteiro (capa, título, minutagem e barras) ficou menor e sempre mais estreito que o relógio: 336 de largura, contra 423 do dia mais estreito (TERÇA). A capa passou de 112 para 80, o título de 25 para 18, o artista de 17 para 13, a minutagem de 14 para 12, as barras ficaram mais baixas (altura 14) e os botões da capa menores. Título comprido termina em "...".
+- O relógio sobe 10 px (`altura` padrão 0.425, que já considera a janela menor).
+
+**Corrigido**
+
+- A posição saía uns 20 px mais baixa do que o configurado: a linha do clima só aparecia depois que a internet respondia, com a janela já posicionada. Agora o espaço do clima fica reservado desde o início e a janela se reposiciona quando o tamanho muda.
+
 ## 1.1.1 (01/11/2026)
 
 **Mudou**

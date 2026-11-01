@@ -10,7 +10,7 @@ public sealed class Config
     // Tamanho: 1.0 é o tamanho pensado para o ultrawide 3440x1440 a 125%.
     public double Escala { get; set; } = 1.0;
     // Onde fica o centro do relógio, em fração da altura da tela (0.5 = meio exato).
-    public double Altura { get; set; } = 0.44;
+    public double Altura { get; set; } = 0.425;
     // "auto" segue o idioma do Windows; "pt" ou "en" fixam.
     public string Idioma { get; set; } = "auto";
     public bool Formato24h { get; set; } = true;

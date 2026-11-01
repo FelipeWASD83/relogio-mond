@@ -21,68 +21,70 @@
       <local:TextoEspacado x:Name="Hora" HorizontalAlignment="Center" Margin="0,4,0,0" Tamanho="28" Espacamento="0.2" />
       <local:TextoEspacado x:Name="TextoClima" HorizontalAlignment="Center" Margin="0,8,0,0" Tamanho="19" Espacamento="0.2" Opacity="0.8" />
 
-      <StackPanel x:Name="BlocoMidia" Width="680" Margin="0,40,0,18" Opacity="0">
+      <!-- o bloco da música inteiro (capa, título, tempo e barras) é menor que o relógio: 336 de largura,
+           contra 423 do dia mais estreito (TERÇA). O modo de captura confere (MidiaMenorQueRelogio). -->
+      <StackPanel x:Name="BlocoMidia" Width="336" Margin="0,34,0,18" Opacity="0">
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
 
-          <Grid x:Name="Capa" Width="112" Height="112" VerticalAlignment="Center" Background="Transparent">
-            <Border x:Name="CapaFundo" CornerRadius="8" Background="#33FFFFFF">
+          <Grid x:Name="Capa" Width="80" Height="80" VerticalAlignment="Center" Background="Transparent">
+            <Border x:Name="CapaFundo" CornerRadius="6" Background="#33FFFFFF">
               <Path Data="M 8,0 L 18,3 L 18,7.5 L 10.5,5.2 L 10.5,19 A 5,4.2 0 1 1 8,15.4 Z"
-                    Fill="#CCFFFFFF" Stretch="Uniform" Width="34" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    Fill="#CCFFFFFF" Stretch="Uniform" Width="24" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Border>
-            <Border x:Name="CapaImagem" CornerRadius="8">
+            <Border x:Name="CapaImagem" CornerRadius="6">
               <Border.Background>
                 <ImageBrush x:Name="CapaPincel" Stretch="UniformToFill" />
               </Border.Background>
             </Border>
             <!-- música pausada: a capa escurece e aparece o ícone de pause por cima -->
-            <Border x:Name="PausaCapa" CornerRadius="8" Background="#B8000000" Opacity="0" IsHitTestVisible="False">
+            <Border x:Name="PausaCapa" CornerRadius="6" Background="#B8000000" Opacity="0" IsHitTestVisible="False">
               <Path x:Name="IconePausaGrande" Data="M 0,0 H 5 V 22 H 0 Z M 11,0 H 16 V 22 H 11 Z" Fill="White"
-                    Stretch="Uniform" Width="28" Height="38" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Stretch="Uniform" Width="20" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center"
                     RenderTransformOrigin="0.5,0.5">
                 <Path.RenderTransform>
                   <ScaleTransform x:Name="EscalaPausa" ScaleX="0.75" ScaleY="0.75" />
                 </Path.RenderTransform>
               </Path>
             </Border>
-            <Border x:Name="Controles" CornerRadius="8" Background="#99000000" Opacity="0">
+            <Border x:Name="Controles" CornerRadius="6" Background="#99000000" Opacity="0">
               <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Border x:Name="BotaoAnterior" Background="Transparent" Width="32" Height="40" Cursor="Hand">
-                  <Path Data="M 0,0 H 2 V 10 H 0 Z M 10,0 L 3,5 L 10,10 Z" Fill="White" Stretch="Uniform" Width="13" />
+                <Border x:Name="BotaoAnterior" Background="Transparent" Width="24" Height="32" Cursor="Hand">
+                  <Path Data="M 0,0 H 2 V 10 H 0 Z M 10,0 L 3,5 L 10,10 Z" Fill="White" Stretch="Uniform" Width="10" />
                 </Border>
-                <Border x:Name="BotaoTocar" Background="Transparent" Width="38" Height="40" Cursor="Hand">
-                  <Path x:Name="IconeTocar" Fill="White" Stretch="Uniform" Width="15" />
+                <Border x:Name="BotaoTocar" Background="Transparent" Width="28" Height="32" Cursor="Hand">
+                  <Path x:Name="IconeTocar" Fill="White" Stretch="Uniform" Width="12" />
                 </Border>
-                <Border x:Name="BotaoProxima" Background="Transparent" Width="32" Height="40" Cursor="Hand">
-                  <Path Data="M 10,0 H 8 V 10 H 10 Z M 0,0 L 7,5 L 0,10 Z" Fill="White" Stretch="Uniform" Width="13" />
+                <Border x:Name="BotaoProxima" Background="Transparent" Width="24" Height="32" Cursor="Hand">
+                  <Path Data="M 10,0 H 8 V 10 H 10 Z M 0,0 L 7,5 L 0,10 Z" Fill="White" Stretch="Uniform" Width="10" />
                 </Border>
               </StackPanel>
             </Border>
           </Grid>
 
-          <StackPanel Grid.Column="1" Margin="22,0,0,0" VerticalAlignment="Center">
-            <TextBlock x:Name="Titulo" FontSize="25" Foreground="White" TextTrimming="CharacterEllipsis" />
-            <TextBlock x:Name="Artista" FontSize="17" Foreground="#C8FFFFFF" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
-            <Grid x:Name="LinhaTempo" Margin="0,14,0,0">
+          <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+            <TextBlock x:Name="Titulo" FontSize="18" Foreground="White" TextTrimming="CharacterEllipsis" />
+            <TextBlock x:Name="Artista" FontSize="13" Foreground="#C8FFFFFF" Margin="0,1,0,0" TextTrimming="CharacterEllipsis" />
+            <Grid x:Name="LinhaTempo" Margin="0,8,0,0">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
               </Grid.ColumnDefinitions>
-              <TextBlock x:Name="TempoAtual" FontSize="14" Foreground="#E6FFFFFF" MinWidth="40" />
-              <Grid Grid.Column="1" Margin="10,0" VerticalAlignment="Center" Height="4">
+              <TextBlock x:Name="TempoAtual" FontSize="12" Foreground="#E6FFFFFF" MinWidth="28" />
+              <Grid Grid.Column="1" Margin="8,0" VerticalAlignment="Center" Height="3">
                 <Border CornerRadius="2" Background="#40FFFFFF" />
                 <Border x:Name="Progresso" CornerRadius="2" Background="White" HorizontalAlignment="Left" Width="0" />
               </Grid>
-              <TextBlock x:Name="TempoTotal" Grid.Column="2" FontSize="14" Foreground="#E6FFFFFF" MinWidth="40" TextAlignment="Right" />
+              <TextBlock x:Name="TempoTotal" Grid.Column="2" FontSize="12" Foreground="#E6FFFFFF" MinWidth="28" TextAlignment="Right" />
             </Grid>
           </StackPanel>
         </Grid>
 
-        <local:Visualizador x:Name="Barras" Height="20" Margin="0,30,0,0" />
+        <local:Visualizador x:Name="Barras" Height="14" Margin="0,22,0,0" />
       </StackPanel>
     </StackPanel>
   </Grid>

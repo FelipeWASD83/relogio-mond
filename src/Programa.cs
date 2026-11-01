@@ -77,7 +77,7 @@ public static class Programa
                 var m = new Mostrador();
                 m.AplicarEscala(esc);
                 m.Barras.Quantidade = cfg.Barras;
-                m.AtualizarRelogio(quando, true, idioma == "en" ? "23°  PARTLY CLOUDY" : "23°  PARCIALMENTE NUBLADO");
+                m.AtualizarRelogio(quando, true, idioma == "en" ? "23°  PARTLY CLOUDY" : "23°  PARCIALMENTE NUBLADO", true);
                 if (!semMidia)
                 {
                     m.AtualizarMidia(Demo.Estado(!pausado));
@@ -106,7 +106,8 @@ public static class Programa
                 enc.Frames.Add(BitmapFrame.Create(rtb));
                 Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(arquivo))!);
                 using (var f = File.Create(arquivo)) enc.Save(f);
-                Console.WriteLine($"{arquivo} {w}x{h} anurati={m.TemFonteAnurati}");
+                Console.WriteLine($"{arquivo} {w}x{h} anurati={m.TemFonteAnurati} {m.Medidas()} menor={m.MidiaMenorQueRelogio}");
+                if (!m.MidiaMenorQueRelogio) codigo = 1;
             }
             catch (Exception e)
             {

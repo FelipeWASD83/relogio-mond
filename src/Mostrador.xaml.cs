@@ -74,14 +74,24 @@ public partial class Mostrador : UserControl
         Escala.ScaleX = Escala.ScaleY = escala;
     }
 
-    public void AtualizarRelogio(DateTime agora, bool h24, string clima)
+    // reservarClima: com o clima ligado, a linha guarda o lugar dela enquanto a internet não responde,
+    // senão o bloco cresceria depois de posicionado e o relógio ficaria mais baixo do que o configurado.
+    public void AtualizarRelogio(DateTime agora, bool h24, string clima, bool reservarClima = false)
     {
         Dia.Texto = Idioma.Dia(agora);
         Data.Texto = Idioma.Data(agora);
         Hora.Texto = "- " + Idioma.Hora(agora, h24) + " -";
         TextoClima.Texto = clima;
-        TextoClima.Visibility = string.IsNullOrEmpty(clima) ? Visibility.Collapsed : Visibility.Visible;
+        TextoClima.Visibility = !string.IsNullOrEmpty(clima) ? Visibility.Visible
+            : reservarClima ? Visibility.Hidden : Visibility.Collapsed;
     }
+
+    // O bloco da música inteiro (capa, título, tempo e barras) tem de ser mais estreito que o relógio
+    // (a linha mais larga entre dia, data, hora e clima) em qualquer dia e idioma.
+    double LarguraDoRelogio() => Math.Max(Math.Max(Dia.ActualWidth, Data.ActualWidth), Math.Max(Hora.ActualWidth, TextoClima.ActualWidth));
+
+    public string Medidas() => $"musica={BlocoMidia.ActualWidth:0}x{BlocoMidia.ActualHeight:0} relogio={LarguraDoRelogio():0}";
+    public bool MidiaMenorQueRelogio => BlocoMidia.ActualWidth < LarguraDoRelogio();
 
     public void AtualizarMidia(EstadoMidia m)
     {

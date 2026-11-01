@@ -31,7 +31,7 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
 |---|---|
 | `src/Programa.cs` | `Main`, o `App` (bandeja, config, vigia do `config.json`) e os modos `--captura`, `--medir`, `--demo`, `--diagnostico`, `--testes` |
 | `src/JanelaRelogio.cs` | A janela: estilos (toolwindow, noactivate, transparent, layered), dona = `Progman`, sempre `HWND_BOTTOM`, posição, laço das barras, mouse na capa, pausa em tela cheia |
-| `src/Mostrador.xaml(.cs)` | O layout (dia, data, hora, clima, capa, título, tempo, barras) |
+| `src/Mostrador.xaml(.cs)` | O layout (dia, data, hora, clima, e o bloco da música: capa, título, tempo, barras) |
 | `src/TextoEspacado.cs` | Texto com espaçamento entre letras e os acentos improvisados para a Anurati |
 | `src/Visualizador.cs` | As barras (sobe em ~20 ms, desce em ~120 ms; sem pontinho de pico) |
 | `src/CapturaAudio.cs` | Loopback WASAPI (NAudio) da saída padrão, FFT de 4096, faixas logarítmicas de 40 Hz a 16 kHz e ganho automático |
@@ -56,8 +56,19 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
 - **Espaçamento pelo desenho da letra** (1.0.1, ele achou o da 1.0.0 largo e desigual): o vão entre
   letras é medido entre os contornos (`BuildGeometry().Bounds`), não pela largura de avanço da fonte.
   Vírgula e ponto grudam na letra de antes. Valores atuais (1.0.2): dia 100 com vão 0.3; data e hora
-  28 e clima 19, vão 0.2. Barras com 20 de altura (1.1.0, ele pediu menores três vezes), 30 de
-  margem em cima e sem pontinho de pico. `altura` padrão 0.44 (era 0.40; na 1.1.0 subiu para 0.37 e ele mandou descer, 1.1.1).
+  28 e clima 19, vão 0.2. Sem pontinho de pico.
+- **O bloco da música inteiro é menor que o relógio** (1.1.2, com um desenho dele: retângulo pequeno
+  centrado embaixo do grande; eu tinha encolhido só o visualizador e ele corrigiu: é tudo, capa,
+  título e minutagem). Largura fixa de 336 (`BlocoMidia`), contra 423 do dia mais estreito (TERÇA);
+  capa 80, título 18, artista 13, tempo 12, barras com 14 de altura. O `--captura` mede as duas
+  larguras (`MidiaMenorQueRelogio`) e sai com erro se o bloco não for menor; conferido nos 7 dias em
+  pt e em 3 em en. Dia mais estreito em outro idioma/fonte: se o relógio ficar abaixo de 336, o
+  teste acusa e é preciso encolher o bloco.
+- **Posição**: `altura` é a fração da tela onde fica o CENTRO da janela (padrão 0.425: 0.40 no começo,
+  0.37 na 1.1.0, 0.44 na 1.1.1; na 1.1.2 o topo do dia sobe 10 px, y=352, e como o bloco da música
+  encolheu a janela, o centro vai a 0.425). O espaço da linha do clima fica reservado
+  (`Visibility.Hidden`) até a internet responder e a janela se reposiciona no `SizeChanged`; antes disso
+  o relógio ficava ~20 px mais baixo que o configurado. Com clima desligado a linha some (`Collapsed`).
 - **Barras fortes pelo ganho automático** (1.1.0, ele achou o visualizador fraco): a faixa mais forte
   dos últimos segundos (meia-vida ~4 s, piso 0,3 contra ruído) vira o topo, e uma curva de 1,3 dá
   contraste. Antes o nível dependia do volume que chegava no loopback. Sem teste com música real
@@ -85,8 +96,9 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
 - Foto sem janela: `dotnet app\RelogioMond.dll --captura saida.png [--idioma en] [--data "2026-11-03 18:42"] [--controles] [--sem-midia] [--pausado]`.
 - fps: `dotnet app\RelogioMond.dll --demo --medir 10` grava `dados\medicao.txt` (mediana, mínimo,
   CPU, memória e onde a janela ficou). Em 01/11/2026: **mediana 83-87 fps, mínimo 73** (1.0.0),
-  **90 / 84** (1.0.1), **92 / 88** (1.0.2) e **82 / 80** (1.1.0, já sintetizando áudio e rodando a
-  FFT a cada quadro, então mais perto do real), CPU ~2%, ~210 MB, em 3440x1440 a 125%.
+  **90 / 84** (1.0.1), **92 / 88** (1.0.2), **82 / 80** (1.1.0, já sintetizando áudio e rodando a
+  FFT a cada quadro, então mais perto do real) e **104 / 94** (1.1.2), CPU ~2%, ~205 MB, em 3440x1440
+  a 125%. A janela da 1.1.2 mede 1550x520 e o topo fica em y=352.
 - O que está tocando agora: `dotnet app\RelogioMond.dll --diagnostico`.
 
 ## Armadilhas
