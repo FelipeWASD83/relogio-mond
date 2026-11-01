@@ -19,6 +19,7 @@ public partial class Mostrador : UserControl
 
     bool _midiaVisivel;
     bool _controlesVisiveis;
+    bool _pausado, _pausaVisivel;
     double _opacidadeAlvo;
     object? _capaAtual;
 
@@ -85,8 +86,8 @@ public partial class Mostrador : UserControl
     public void AtualizarMidia(EstadoMidia m)
     {
         _midiaVisivel = m.Tem;
-        // some sem música; esmaece quando está pausada
-        double alvo = !m.Tem ? 0 : m.Tocando ? 1 : 0.55;
+        // o bloco some quando não tem música; pausada, só a capa muda (AtualizarPausa)
+        double alvo = m.Tem ? 1 : 0;
         if (Math.Abs(alvo - _opacidadeAlvo) > 0.001)
         {
             _opacidadeAlvo = alvo;
@@ -107,6 +108,8 @@ public partial class Mostrador : UserControl
         }
 
         IconeTocar.Data = m.Tocando ? IconePausa : IconePlay;
+        _pausado = !m.Tocando;
+        AtualizarPausa();
 
         if (m.Duracao > TimeSpan.Zero)
         {
@@ -128,6 +131,23 @@ public partial class Mostrador : UserControl
 
     public bool MidiaVisivel => _midiaVisivel;
 
+    // Pausada e sem o mouse na capa: escurece e mostra o pause. Com o mouse em cima, o pause
+    // sai e entram os botões (que já trazem o play), para um não ficar por cima do outro.
+    void AtualizarPausa()
+    {
+        bool mostrar = _pausado && !_controlesVisiveis;
+        if (mostrar == _pausaVisivel) return;
+        _pausaVisivel = mostrar;
+        PausaCapa.BeginAnimation(OpacityProperty,
+            new DoubleAnimation(mostrar ? 1 : 0, TimeSpan.FromMilliseconds(mostrar ? 350 : 180)) { EasingFunction = new SineEase() });
+        IEasingFunction suave = mostrar
+            ? new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.5 }
+            : new SineEase();
+        var escala = new DoubleAnimation(mostrar ? 1 : 0.75, TimeSpan.FromMilliseconds(mostrar ? 420 : 180)) { EasingFunction = suave };
+        EscalaPausa.BeginAnimation(ScaleTransform.ScaleXProperty, escala);
+        EscalaPausa.BeginAnimation(ScaleTransform.ScaleYProperty, escala);
+    }
+
     // Para a captura em PNG: põe tudo no estado final, sem esperar animação.
     public void PularAnimacoes(bool controles = false)
     {
@@ -135,6 +155,13 @@ public partial class Mostrador : UserControl
         BlocoMidia.Opacity = _opacidadeAlvo;
         Controles.BeginAnimation(OpacityProperty, null);
         Controles.Opacity = controles ? 1 : 0;
+        _controlesVisiveis = controles;
+        _pausaVisivel = _pausado && !controles;
+        PausaCapa.BeginAnimation(OpacityProperty, null);
+        PausaCapa.Opacity = _pausaVisivel ? 1 : 0;
+        EscalaPausa.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        EscalaPausa.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        EscalaPausa.ScaleX = EscalaPausa.ScaleY = _pausaVisivel ? 1 : 0.75;
     }
 
     // Retângulo da capa em coordenadas deste controle (para saber se o mouse está em cima).
@@ -149,5 +176,6 @@ public partial class Mostrador : UserControl
         if (mostrar == _controlesVisiveis) return;
         _controlesVisiveis = mostrar;
         Controles.BeginAnimation(OpacityProperty, new DoubleAnimation(mostrar ? 1 : 0, TimeSpan.FromMilliseconds(160)));
+        AtualizarPausa();
     }
 }

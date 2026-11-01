@@ -12,27 +12,37 @@ public static class Demo
     static BitmapSource? _capa;
     static readonly DateTime Inicio = DateTime.Now;
 
-    public static EstadoMidia Estado() => new()
+    public static EstadoMidia Estado(bool tocando = true) => new()
     {
         Tem = true,
         Titulo = Idioma.Ingles ? "Test Track (Night Drive)" : "Faixa de Teste (Noite na Estrada)",
         Artista = "Relógio Mond",
         Capa = Capa(),
-        Tocando = true,
+        Tocando = tocando,
         Posicao = TimeSpan.FromSeconds(83 + (DateTime.Now - Inicio).TotalSeconds),
         Duracao = TimeSpan.FromSeconds(224),
     };
 
-    public static void Espectro(float[] saida, double t)
+    // Áudio sintético parecido com música (graves num pulso de 2 Hz, médios e agudos oscilando,
+    // menos energia para o agudo), para passar pelo mesmo caminho do áudio real: FFT, faixas e ganho.
+    public static float[] Amostras(double t0, int n, int taxa)
     {
-        int n = saida.Length;
+        var s = new float[n];
         for (int i = 0; i < n; i++)
         {
-            double x = (double)i / n;
-            double forma = 0.85 * Math.Exp(-x * 1.6) + 0.15;
-            double mexe = 0.55 + 0.45 * Math.Sin(t * 7.3 + i * 0.55) * Math.Sin(t * 2.1 + i * 0.13);
-            saida[i] = (float)Math.Clamp(forma * mexe, 0, 1);
+            double t = t0 + (double)i / taxa;
+            double soma = 0;
+            for (int k = 0; k < 29; k++)
+            {
+                double f = 55 * Math.Pow(2, k / 4.0);
+                double ritmo = k < 8
+                    ? Math.Pow(Math.Abs(Math.Sin(Math.PI * 2.0 * t)), 6)
+                    : 0.35 + 0.65 * Math.Pow(Math.Abs(Math.Sin(2 * Math.PI * (0.7 + 0.23 * (k % 7)) * t + k)), 2);
+                soma += 0.05 * Math.Pow(f / 110, -0.7) * ritmo * Math.Sin(2 * Math.PI * f * t);
+            }
+            s[i] = (float)soma;
         }
+        return s;
     }
 
     public static BitmapSource Capa()

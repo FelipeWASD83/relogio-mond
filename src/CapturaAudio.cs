@@ -180,10 +180,29 @@ public sealed class CapturaAudio : IDisposable
             // inclinação de +4,5 dB por oitava: música perde energia nos agudos e as barras da direita morreriam
             double oitavas = Math.Log2(Math.Sqrt(f0 * f1) / 100.0);
             db += 4.5 * oitavas;
-            saida[b] = (float)Math.Clamp((db + 62) / 56, 0, 1);
+            saida[b] = (float)Math.Clamp((db + 56) / 46, 0, 1);
+        }
+
+        // Ganho automático: a faixa mais forte dos últimos segundos vai ao topo, então música baixa
+        // (ou volume do Windows baixo) enche as barras como a alta. O pico lembrado cai com meia-vida
+        // de ~4 s; o piso de 0,3 impede de aumentar ruído de fundo.
+        long agora = Environment.TickCount64;
+        double dt = _ultimaChamada == 0 ? 0 : Math.Min(1.0, (agora - _ultimaChamada) / 1000.0);
+        _ultimaChamada = agora;
+        float maior = 0;
+        for (int b = 0; b < n; b++) maior = Math.Max(maior, saida[b]);
+        _picoLembrado = Math.Max(maior, _picoLembrado * (float)Math.Exp(-dt / 6.0));
+        float ganho = 1f / Math.Max(_picoLembrado, 0.3f);
+        for (int b = 0; b < n; b++)
+        {
+            // a curva (>1) separa barra alta de baixa: mais contraste, mais "pulso"
+            saida[b] = (float)Math.Pow(Math.Clamp(saida[b] * ganho, 0f, 1f), 1.3);
         }
         return true;
     }
+
+    float _picoLembrado;
+    long _ultimaChamada;
 
     static void Fft(Complex[] a)
     {

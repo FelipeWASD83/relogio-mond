@@ -38,6 +38,16 @@
                 <ImageBrush x:Name="CapaPincel" Stretch="UniformToFill" />
               </Border.Background>
             </Border>
+            <!-- música pausada: a capa escurece e aparece o ícone de pause por cima -->
+            <Border x:Name="PausaCapa" CornerRadius="8" Background="#B8000000" Opacity="0" IsHitTestVisible="False">
+              <Path x:Name="IconePausaGrande" Data="M 0,0 H 5 V 22 H 0 Z M 11,0 H 16 V 22 H 11 Z" Fill="White"
+                    Stretch="Uniform" Width="28" Height="38" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    RenderTransformOrigin="0.5,0.5">
+                <Path.RenderTransform>
+                  <ScaleTransform x:Name="EscalaPausa" ScaleX="0.75" ScaleY="0.75" />
+                </Path.RenderTransform>
+              </Path>
+            </Border>
             <Border x:Name="Controles" CornerRadius="8" Background="#99000000" Opacity="0">
               <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Border x:Name="BotaoAnterior" Background="Transparent" Width="32" Height="40" Cursor="Hand">
@@ -72,7 +82,7 @@
           </StackPanel>
         </Grid>
 
-        <local:Visualizador x:Name="Barras" Height="26" Margin="0,14,0,0" />
+        <local:Visualizador x:Name="Barras" Height="20" Margin="0,30,0,0" />
       </StackPanel>
     </StackPanel>
   </Grid>

@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.0 (01/11/2026)
+
+**Novo**
+
+- Animação de pausa: com a música pausada, a capa escurece e aparece um ícone de pause branco por cima. Passando o mouse na capa, o pause sai e entram os botões.
+
+**Mudou**
+
+- Barras mais fortes: ganho automático (a faixa mais forte vai ao topo, então música baixa ou volume baixo enche as barras como a alta), subida mais rápida e mais contraste entre barra alta e baixa.
+- Visualizador menor (altura 20) e mais afastado do bloco da música.
+- O relógio sobe um pouco na tela (`altura` de 0.40 para 0.37). Quem já tinha o `config.json` mantém o valor que estava lá.
+- A música pausada não esmaece mais o bloco inteiro; só a capa muda.
+
 ## 1.0.2 (01/11/2026)
 
 **Mudou**

@@ -33,14 +33,14 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
 | `src/JanelaRelogio.cs` | A janela: estilos (toolwindow, noactivate, transparent, layered), dona = `Progman`, sempre `HWND_BOTTOM`, posição, laço das barras, mouse na capa, pausa em tela cheia |
 | `src/Mostrador.xaml(.cs)` | O layout (dia, data, hora, clima, capa, título, tempo, barras) |
 | `src/TextoEspacado.cs` | Texto com espaçamento entre letras e os acentos improvisados para a Anurati |
-| `src/Visualizador.cs` | As barras (suavização de subida/descida e o pontinho de pico) |
-| `src/CapturaAudio.cs` | Loopback WASAPI (NAudio) da saída padrão, FFT de 4096 e faixas logarítmicas de 40 Hz a 16 kHz |
+| `src/Visualizador.cs` | As barras (sobe em ~20 ms, desce em ~120 ms; sem pontinho de pico) |
+| `src/CapturaAudio.cs` | Loopback WASAPI (NAudio) da saída padrão, FFT de 4096, faixas logarítmicas de 40 Hz a 16 kHz e ganho automático |
 | `src/Midia.cs` | Controle de mídia do Windows (GSMTC): sessão escolhida, título, capa, minutagem interpolada, botões |
 | `src/Clima.cs` | Open-Meteo, a cada 15 min |
 | `src/Idioma.cs` | Textos pt/en, dias, meses, códigos de tempo do WMO |
 | `src/Atualizador.cs`, `JanelaAtualizacao.cs` | Procura e baixa a release, confere o SHA-256 (`digest` do GitHub) e deixa pronto para o `iniciar.pyw` |
 | `src/Bandeja.cs`, `InicioAutomatico.cs` | Menu da bandeja e a linha em `HKCU\...\Run` |
-| `src/Testes.cs`, `Demo.cs` | Testes sem som e a música de mentira da captura e da medição |
+| `src/Testes.cs`, `Demo.cs` | Testes sem som e o áudio sintético (parecido com música) da captura e da medição, que passa pela mesma FFT e pelo mesmo ganho do áudio real |
 | `ferramentas/criar-atalho.ps1` | Atalho no Menu Iniciar (o projeto cria o próprio: o alvo é o `pythonw` do sistema) |
 | `ferramentas/publicar-versao.ps1` | Monta o pacote (com o app compilado, sem `src/` nem a Anurati) e cria a release. **Publicar é decisão do Felipe** |
 
@@ -56,7 +56,16 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
 - **Espaçamento pelo desenho da letra** (1.0.1, ele achou o da 1.0.0 largo e desigual): o vão entre
   letras é medido entre os contornos (`BuildGeometry().Bounds`), não pela largura de avanço da fonte.
   Vírgula e ponto grudam na letra de antes. Valores atuais (1.0.2): dia 100 com vão 0.3; data e hora
-  28 e clima 19, vão 0.2. Barras com 26 de altura e sem pontinho de pico (ele pediu menores duas vezes).
+  28 e clima 19, vão 0.2. Barras com 20 de altura (1.1.0, ele pediu menores três vezes), 30 de
+  margem em cima e sem pontinho de pico. `altura` padrão 0.37 (o bloco da música desceu).
+- **Barras fortes pelo ganho automático** (1.1.0, ele achou o visualizador fraco): a faixa mais forte
+  dos últimos segundos (meia-vida ~4 s, piso 0,3 contra ruído) vira o topo, e uma curva de 1,3 dá
+  contraste. Antes o nível dependia do volume que chegava no loopback. Sem teste com música real
+  tocando (só sinal sintético pela mesma FFT); se ficar fraco ou saturado de verdade, os números
+  estão em `CapturaAudio.Espectro` (`(db + 56) / 46`, `0.3`, `1.3`).
+- **Pausa na capa** (1.1.0): `PausaCapa` escurece (preto 72%) e mostra o pause branco com um pulinho
+  de escala; sai quando o mouse entra na capa (aí valem os botões, que já mostram o play). O bloco
+  da música não esmaece mais ao pausar.
 - **Só a capa recebe clique.** A janela é `WS_EX_TRANSPARENT`; um timer de 50 ms tira o bit enquanto
   o mouse está em cima da capa (aí aparecem os controles) e põe de volta ao sair.
 - **Visível no Win+D** porque a janela é "owned" pela `Progman`. Conferido no build 26300 em 01/11/2026.
@@ -73,11 +82,11 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
 
 - Compilar: `dotnet publish src -c Release -o app` (ou só abrir pelo `iniciar.pyw`).
 - Testes (sem som; abrem um player mudo em outro processo): `dotnet app\RelogioMond.dll --testes`.
-- Foto sem janela: `dotnet app\RelogioMond.dll --captura saida.png [--idioma en] [--data "2026-11-03 18:42"] [--controles] [--sem-midia]`.
+- Foto sem janela: `dotnet app\RelogioMond.dll --captura saida.png [--idioma en] [--data "2026-11-03 18:42"] [--controles] [--sem-midia] [--pausado]`.
 - fps: `dotnet app\RelogioMond.dll --demo --medir 10` grava `dados\medicao.txt` (mediana, mínimo,
-  CPU, memória e onde a janela ficou). Em 01/11/2026: **mediana 83-87 fps, mínimo 73** (1.0.0) e
-  **mediana 90, mínimo 84** (1.0.1) e **mediana 92, mínimo 88** (1.0.2), CPU ~2%, ~210 MB, em
-  3440x1440 a 125%.
+  CPU, memória e onde a janela ficou). Em 01/11/2026: **mediana 83-87 fps, mínimo 73** (1.0.0),
+  **90 / 84** (1.0.1), **92 / 88** (1.0.2) e **82 / 80** (1.1.0, já sintetizando áudio e rodando a
+  FFT a cada quadro, então mais perto do real), CPU ~2%, ~210 MB, em 3440x1440 a 125%.
 - O que está tocando agora: `dotnet app\RelogioMond.dll --diagnostico`.
 
 ## Armadilhas

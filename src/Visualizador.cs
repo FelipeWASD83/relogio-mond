@@ -37,8 +37,9 @@ public sealed class Visualizador : FrameworkElement
     {
         bool mexe = false;
         dt = Math.Clamp(dt, 0.001, 0.1);
-        double subida = 1 - Math.Pow(0.0005, dt);
-        double descida = 1 - Math.Pow(0.04, dt);
+        // sobe em ~20 ms e desce em ~120 ms: antes (~130 ms e ~310 ms) as barras arrastavam e pareciam fracas
+        double subida = 1 - Math.Exp(-dt / 0.02);
+        double descida = 1 - Math.Exp(-dt / 0.12);
         for (int i = 0; i < _valor.Length; i++)
         {
             float alvo = _alvo[i];

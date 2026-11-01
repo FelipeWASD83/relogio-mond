@@ -28,7 +28,7 @@ public static class Programa
         if (args.Contains("--diagnostico")) return Diagnostico();
         if (args.Contains("--testes")) return Testes.Rodar();
         if (args.Contains("--tocar-mudo")) return Testes.TocarMudo();
-        if (args.Contains("--captura")) return Captura(Arg("--captura")!, Arg("--idioma"), Arg("--data"), Arg("--escala"), args.Contains("--controles"), args.Contains("--sem-midia"));
+        if (args.Contains("--captura")) return Captura(Arg("--captura")!, Arg("--idioma"), Arg("--data"), Arg("--escala"), args.Contains("--controles"), args.Contains("--sem-midia"), args.Contains("--pausado"));
 
         using var unico = new Mutex(true, @"Local\RelogioMond", out bool primeiro);
         if (!primeiro && !args.Contains("--medir")) return 0;
@@ -62,7 +62,7 @@ public static class Programa
     }
 
     // Renderiza o mostrador num PNG, sem abrir janela, sobre um fundo escuro qualquer.
-    static int Captura(string arquivo, string? idioma, string? data, string? escala, bool controles, bool semMidia)
+    static int Captura(string arquivo, string? idioma, string? data, string? escala, bool controles, bool semMidia, bool pausado)
     {
         var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         int codigo = 0;
@@ -80,8 +80,13 @@ public static class Programa
                 m.AtualizarRelogio(quando, true, idioma == "en" ? "23°  PARTLY CLOUDY" : "23°  PARCIALMENTE NUBLADO");
                 if (!semMidia)
                 {
-                    m.AtualizarMidia(Demo.Estado());
-                    Demo.Espectro(m.Barras.Entrada, 1.7);
+                    m.AtualizarMidia(Demo.Estado(!pausado));
+                    using (var cap = new CapturaAudio())
+                    {
+                        cap.Alimentar(Demo.Amostras(1.62, 8192, 48000), 48000);
+                        cap.Espectro(m.Barras.Entrada);
+                    }
+                    if (pausado) Array.Clear(m.Barras.Entrada);
                     for (int i = 0; i < 40; i++) m.Barras.Passo(0.1);
                 }
                 m.PularAnimacoes(controles);
@@ -92,7 +97,7 @@ public static class Programa
                 fundo.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
                 fundo.Arrange(new Rect(fundo.DesiredSize));
                 fundo.UpdateLayout();
-                if (!semMidia) m.AtualizarMidia(Demo.Estado()); // a barra de progresso precisa da largura já medida
+                if (!semMidia) m.AtualizarMidia(Demo.Estado(!pausado)); // a barra de progresso precisa da largura já medida
                 fundo.UpdateLayout();
                 int w = (int)Math.Ceiling(fundo.ActualWidth * dpi / 96), h = (int)Math.Ceiling(fundo.ActualHeight * dpi / 96);
                 var rtb = new RenderTargetBitmap(w, h, dpi, dpi, PixelFormats.Pbgra32);

@@ -236,7 +236,9 @@ public sealed class JanelaRelogio : Window
 
         if (ModoDemo)
         {
-            Demo.Espectro(_m.Barras.Entrada, t.TotalSeconds);
+            int novas = Math.Clamp((int)(48000 * dt), 1, 4096);
+            _audio.Alimentar(Demo.Amostras(t.TotalSeconds - dt, novas, 48000), 48000);
+            _audio.Espectro(_m.Barras.Entrada);
         }
         else
         {

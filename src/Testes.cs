@@ -42,6 +42,18 @@ public static class Testes
             Conferir(f.Max() < 0.02, "silêncio zera as barras", $"maior={f.Max():0.000}");
         }
 
+        // música bem baixa (cinco tons a -50 dB cada) tem de encher as barras do mesmo jeito: ganho automático
+        using (var a = new CapturaAudio())
+        {
+            const int taxa = 48000, n = 56;
+            var tons = new[] { 100, 300, 1000, 3000, 8000 };
+            var baixa = Enumerable.Range(0, 8192).Select(i => (float)tons.Sum(t => 0.003 * Math.Sin(2 * Math.PI * t * i / taxa))).ToArray();
+            a.Alimentar(baixa, taxa);
+            var f = new float[n];
+            a.Espectro(f);
+            Conferir(f.Max() >= 0.95, "som baixo enche as barras", $"maior={f.Max():0.00} (sem o ganho automático ficava em ~0.7)");
+        }
+
         // 2. idioma
         Idioma.Definir("pt");
         var terca = new DateTime(2026, 11, 3, 18, 42, 0);

@@ -7,7 +7,7 @@ título, artista, minutagem e um visualizador de barras que reage ao som de verd
 Fica preso na área de trabalho: atrás de todas as janelas, visível no Win+D, sem aparecer na
 barra de tarefas nem no Alt+Tab, e o clique passa direto para os ícones de baixo. A única parte
 que responde ao mouse é a capa: passando por cima aparecem os botões de anterior, tocar/pausar e
-próxima.
+próxima. Com a música pausada, a capa escurece e fica com um ícone de pause branco por cima.
 
 Em português e em inglês (segue o idioma do Windows, ou escolha pelo menu).
 
@@ -42,7 +42,7 @@ No `config.json`:
 | Campo | Para que serve | Padrão |
 |---|---|---|
 | `escala` | tamanho (1 = pensado para 3440x1440 a 125%) | `1.0` |
-| `altura` | onde fica o centro do relógio, em fração da altura da tela | `0.40` |
+| `altura` | onde fica o centro do relógio, em fração da altura da tela (menor sobe) | `0.37` |
 | `idioma` | `auto`, `pt` ou `en` | `auto` |
 | `formato24h` | hora de 24 horas | `true` |
 | `barras` | quantas barras no visualizador | `56` |
