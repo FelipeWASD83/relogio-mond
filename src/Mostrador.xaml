@@ -16,10 +16,10 @@
         <DropShadowEffect BlurRadius="16" ShadowDepth="0" Opacity="0.5" Color="#000000" RenderingBias="Performance" />
       </StackPanel.Effect>
 
-      <local:TextoEspacado x:Name="Dia" HorizontalAlignment="Center" Tamanho="100" Espacamento="0.42" SoMaiusculas="True" />
-      <local:TextoEspacado x:Name="Data" HorizontalAlignment="Center" Margin="0,4,0,0" Tamanho="21" Espacamento="0.32" />
-      <local:TextoEspacado x:Name="Hora" HorizontalAlignment="Center" Margin="0,2,0,0" Tamanho="21" Espacamento="0.32" />
-      <local:TextoEspacado x:Name="TextoClima" HorizontalAlignment="Center" Margin="0,8,0,0" Tamanho="14" Espacamento="0.3" Opacity="0.8" />
+      <local:TextoEspacado x:Name="Dia" HorizontalAlignment="Center" Tamanho="100" Espacamento="0.3" SoMaiusculas="True" />
+      <local:TextoEspacado x:Name="Data" HorizontalAlignment="Center" Margin="0,4,0,0" Tamanho="21" Espacamento="0.2" />
+      <local:TextoEspacado x:Name="Hora" HorizontalAlignment="Center" Margin="0,4,0,0" Tamanho="21" Espacamento="0.2" />
+      <local:TextoEspacado x:Name="TextoClima" HorizontalAlignment="Center" Margin="0,8,0,0" Tamanho="14" Espacamento="0.2" Opacity="0.8" />
 
       <StackPanel x:Name="BlocoMidia" Width="680" Margin="0,40,0,18" Opacity="0">
         <Grid>
@@ -72,7 +72,7 @@
           </StackPanel>
         </Grid>
 
-        <local:Visualizador x:Name="Barras" Height="78" Margin="0,22,0,0" />
+        <local:Visualizador x:Name="Barras" Height="42" Margin="0,16,0,0" />
       </StackPanel>
     </StackPanel>
   </Grid>

@@ -38,7 +38,9 @@ public sealed class TextoEspacado : FrameworkElement
 
     enum Sinal { Nenhum, Agudo, Grave, Circunflexo, Til, Cedilha, Trema }
 
-    sealed record Peca(FormattedText? Texto, double Largura, Sinal Sinal);
+    // Largura e InkEsq vêm do desenho da letra (não da largura "oficial" da fonte): assim o vão
+    // entre uma letra e outra é igual, até em volta de letra estreita como o I.
+    sealed record Peca(FormattedText? Texto, double Largura, double InkEsq, Sinal Sinal, bool Colada);
 
     List<Peca>? _pecas;
     double _largura, _altura, _baseline, _alturaMaiuscula;
@@ -78,16 +80,18 @@ public sealed class TextoEspacado : FrameworkElement
             }
             if (c == ' ')
             {
-                _pecas.Add(new Peca(null, Tamanho * 0.32, Sinal.Nenhum));
+                _pecas.Add(new Peca(null, Tamanho * 0.3, 0, Sinal.Nenhum, false));
                 continue;
             }
             var ft = new FormattedText(letra, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, tf, Tamanho, Cor, dpi);
-            _pecas.Add(new Peca(ft, ft.WidthIncludingTrailingWhitespace, sinal));
+            var tinta = ft.BuildGeometry(new Point(0, 0)).Bounds;
+            if (tinta.IsEmpty || tinta.Width <= 0) tinta = new Rect(0, 0, ft.WidthIncludingTrailingWhitespace, 1);
+            // vírgula e ponto grudam na letra de antes
+            _pecas.Add(new Peca(ft, tinta.Width, tinta.Left, sinal, c is ',' or '.'));
         }
 
-        double esp = Espacamento * Tamanho;
         _largura = 0;
-        for (int i = 0; i < _pecas.Count; i++) _largura += _pecas[i].Largura + (i < _pecas.Count - 1 ? esp : 0);
+        for (int i = 0; i < _pecas.Count; i++) _largura += Vao(i) + _pecas[i].Largura;
 
         double baseline = glifos != null ? glifos.Baseline * Tamanho : Tamanho * 0.8;
         _alturaMaiuscula = glifos != null ? glifos.CapsHeight * Tamanho : Tamanho * 0.7;
@@ -111,6 +115,14 @@ public sealed class TextoEspacado : FrameworkElement
 
     double _desloc;
 
+    // espaço antes da peça i
+    double Vao(int i)
+    {
+        if (i == 0 || _pecas == null) return 0;
+        if (_pecas[i].Colada) return Espacamento * Tamanho * 0.15;
+        return Espacamento * Tamanho;
+    }
+
     protected override Size MeasureOverride(Size disponivel)
     {
         Montar();
@@ -122,19 +134,20 @@ public sealed class TextoEspacado : FrameworkElement
         Montar();
         if (_pecas == null) return;
         double x = Math.Max(0, (ActualWidth - _largura) / 2);
-        double esp = Espacamento * Tamanho;
         double traco = Math.Max(1.2, Tamanho * 0.075);
         var caneta = new Pen(Cor, traco) { StartLineCap = PenLineCap.Flat, EndLineCap = PenLineCap.Flat };
         caneta.Freeze();
 
-        foreach (var p in _pecas)
+        for (int i = 0; i < _pecas.Count; i++)
         {
+            var p = _pecas[i];
+            x += Vao(i);
             if (p.Texto != null)
             {
-                dc.DrawText(p.Texto, new Point(x, _desloc));
+                dc.DrawText(p.Texto, new Point(x - p.InkEsq, _desloc));
                 if (p.Sinal != Sinal.Nenhum) DesenharSinal(dc, caneta, p.Sinal, x, p.Largura);
             }
-            x += p.Largura + esp;
+            x += p.Largura;
         }
     }
 

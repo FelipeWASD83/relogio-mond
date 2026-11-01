@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 (01/11/2026)
+
+**Mudou**
+
+- Espaçamento entre as letras mais apertado e igual em todas: agora é medido pelo desenho de cada letra, então letra estreita como o I não fica mais isolada.
+- Visualizador de barras mais baixo e com barras mais finas.
+
 ## 1.0.0 (01/11/2026)
 
 **Novo**

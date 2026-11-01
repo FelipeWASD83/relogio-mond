@@ -67,10 +67,10 @@ public sealed class Visualizador : FrameworkElement
         int n = _valor.Length;
         if (n == 0 || ActualWidth <= 0) return;
         double passo = ActualWidth / n;
-        double largura = Math.Max(1, passo * 0.56);
+        double largura = Math.Max(1, passo * 0.5);
         double h = ActualHeight;
         double raio = largura / 2;
-        double pontinho = Math.Max(1.5, largura * 0.5);
+        double pontinho = Math.Max(1.5, largura * 0.4);
         for (int i = 0; i < n; i++)
         {
             double x = i * passo + (passo - largura) / 2;
