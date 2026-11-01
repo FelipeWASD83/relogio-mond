@@ -51,11 +51,12 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
 - **A Anurati não vai para o git nem para a release.** É grátis só para uso pessoal. Cada PC baixa
   a sua (URL e SHA-256 no `iniciar.pyw`). Sem ela, o dia cai na Quicksand Light com mais espaçamento.
 - **A Anurati só tem A-Z.** O `TextoEspacado` desenha a letra base e improvisa o sinal: cedilha é um
-  traço embaixo do C (pedido dele), agudo um traço inclinado em cima, e assim por diante.
+  risco na diagonal embaixo do C, na inclinação do agudo (pedido dele na 1.0.2; na 1.0.0 era um traço
+  reto), agudo um traço inclinado em cima, e assim por diante.
 - **Espaçamento pelo desenho da letra** (1.0.1, ele achou o da 1.0.0 largo e desigual): o vão entre
   letras é medido entre os contornos (`BuildGeometry().Bounds`), não pela largura de avanço da fonte.
-  Vírgula e ponto grudam na letra de antes. Valores atuais: dia 0.3, data/hora/clima 0.2 (em fração
-  do tamanho). Barras com 42 de altura.
+  Vírgula e ponto grudam na letra de antes. Valores atuais (1.0.2): dia 100 com vão 0.3; data e hora
+  28 e clima 19, vão 0.2. Barras com 26 de altura e sem pontinho de pico (ele pediu menores duas vezes).
 - **Só a capa recebe clique.** A janela é `WS_EX_TRANSPARENT`; um timer de 50 ms tira o bit enquanto
   o mouse está em cima da capa (aí aparecem os controles) e põe de volta ao sair.
 - **Visível no Win+D** porque a janela é "owned" pela `Progman`. Conferido no build 26300 em 01/11/2026.
@@ -75,7 +76,8 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
 - Foto sem janela: `dotnet app\RelogioMond.dll --captura saida.png [--idioma en] [--data "2026-11-03 18:42"] [--controles] [--sem-midia]`.
 - fps: `dotnet app\RelogioMond.dll --demo --medir 10` grava `dados\medicao.txt` (mediana, mínimo,
   CPU, memória e onde a janela ficou). Em 01/11/2026: **mediana 83-87 fps, mínimo 73** (1.0.0) e
-  **mediana 90, mínimo 84** (1.0.1), CPU ~2%, ~215 MB, em 3440x1440 a 125%.
+  **mediana 90, mínimo 84** (1.0.1) e **mediana 92, mínimo 88** (1.0.2), CPU ~2%, ~210 MB, em
+  3440x1440 a 125%.
 - O que está tocando agora: `dotnet app\RelogioMond.dll --diagnostico`.
 
 ## Armadilhas

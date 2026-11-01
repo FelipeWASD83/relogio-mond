@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.2 (01/11/2026)
+
+**Mudou**
+
+- Data, hora e clima maiores.
+- Visualizador de barras ainda mais baixo, sem o pontinho de pico em cima das barras.
+- O Ç do dia agora tem um risco na diagonal embaixo do C, na mesma inclinação do acento do Á.
+
 ## 1.0.1 (01/11/2026)
 
 **Mudou**

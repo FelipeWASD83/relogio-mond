@@ -9,7 +9,7 @@ namespace RelogioMond;
 
 // Texto com espaçamento entre letras (o WPF não tem letter-spacing). Quando a fonte
 // não tem uma letra acentuada (a Anurati só tem A-Z), desenha a letra base e
-// improvisa o sinal com traços: cedilha vira um traço embaixo do C, agudo um traço
+// improvisa o sinal com traços: cedilha vira um risco diagonal embaixo do C, agudo um traço
 // inclinado em cima, e assim por diante.
 public sealed class TextoEspacado : FrameworkElement
 {
@@ -160,9 +160,8 @@ public sealed class TextoEspacado : FrameworkElement
         switch (sinal)
         {
             case Sinal.Cedilha:
-                // o traço embaixo do C, do jeito que ele pediu
-                double y = _baseline + s * 0.13;
-                dc.DrawLine(caneta, new Point(cx - s * 0.13, y), new Point(cx + s * 0.13, y));
+                // risco na diagonal embaixo do C (pedido dele), na mesma inclinação do agudo
+                dc.DrawLine(caneta, new Point(cx - s * 0.08, _baseline + s * 0.19), new Point(cx + s * 0.08, _baseline + s * 0.05));
                 break;
             case Sinal.Agudo:
                 dc.DrawLine(caneta, new Point(cx - s * 0.08, acima), new Point(cx + s * 0.1, acima - s * 0.11));

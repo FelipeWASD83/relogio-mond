@@ -17,9 +17,9 @@
       </StackPanel.Effect>
 
       <local:TextoEspacado x:Name="Dia" HorizontalAlignment="Center" Tamanho="100" Espacamento="0.3" SoMaiusculas="True" />
-      <local:TextoEspacado x:Name="Data" HorizontalAlignment="Center" Margin="0,4,0,0" Tamanho="21" Espacamento="0.2" />
-      <local:TextoEspacado x:Name="Hora" HorizontalAlignment="Center" Margin="0,4,0,0" Tamanho="21" Espacamento="0.2" />
-      <local:TextoEspacado x:Name="TextoClima" HorizontalAlignment="Center" Margin="0,8,0,0" Tamanho="14" Espacamento="0.2" Opacity="0.8" />
+      <local:TextoEspacado x:Name="Data" HorizontalAlignment="Center" Margin="0,6,0,0" Tamanho="28" Espacamento="0.2" />
+      <local:TextoEspacado x:Name="Hora" HorizontalAlignment="Center" Margin="0,4,0,0" Tamanho="28" Espacamento="0.2" />
+      <local:TextoEspacado x:Name="TextoClima" HorizontalAlignment="Center" Margin="0,8,0,0" Tamanho="19" Espacamento="0.2" Opacity="0.8" />
 
       <StackPanel x:Name="BlocoMidia" Width="680" Margin="0,40,0,18" Opacity="0">
         <Grid>
@@ -72,7 +72,7 @@
           </StackPanel>
         </Grid>
 
-        <local:Visualizador x:Name="Barras" Height="42" Margin="0,16,0,0" />
+        <local:Visualizador x:Name="Barras" Height="26" Margin="0,14,0,0" />
       </StackPanel>
     </StackPanel>
   </Grid>

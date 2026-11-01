@@ -4,16 +4,13 @@ using System.Windows.Media;
 
 namespace RelogioMond;
 
-// As barras. Cada quadro recebe o espectro cru e suaviza: sobe rápido, desce devagar,
-// com um pontinho de pico que cai depois de segurar um instante.
+// As barras. Cada quadro recebe o espectro cru e suaviza: sobe rápido, desce devagar.
+// Sem pontinho de pico desde a 1.0.2: com as barras baixas ele comia a altura toda.
 public sealed class Visualizador : FrameworkElement
 {
     float[] _alvo = Array.Empty<float>();
     float[] _valor = Array.Empty<float>();
-    float[] _pico = Array.Empty<float>();
-    double[] _seguraPico = Array.Empty<double>();
-    Brush _cor = Brushes.White;
-    Brush _corPico = Brushes.White;
+    readonly Brush _cor;
 
     public int Quantidade
     {
@@ -23,8 +20,6 @@ public sealed class Visualizador : FrameworkElement
             if (value == _valor.Length) return;
             _alvo = new float[value];
             _valor = new float[value];
-            _pico = new float[value];
-            _seguraPico = new double[value];
             InvalidateVisual();
         }
     }
@@ -35,7 +30,6 @@ public sealed class Visualizador : FrameworkElement
     {
         Quantidade = 56;
         var c = new SolidColorBrush(Color.FromArgb(235, 255, 255, 255)); c.Freeze(); _cor = c;
-        var p = new SolidColorBrush(Color.FromArgb(150, 255, 255, 255)); p.Freeze(); _corPico = p;
     }
 
     // dt em segundos. Devolve true se ainda tem barra em movimento (vale redesenhar).
@@ -53,11 +47,6 @@ public sealed class Visualizador : FrameworkElement
             if (v < 0.002f) v = 0;
             if (Math.Abs(v - _valor[i]) > 0.0005f) mexe = true;
             _valor[i] = v;
-
-            if (v >= _pico[i]) { _pico[i] = v; _seguraPico[i] = 0.35; }
-            else if (_seguraPico[i] > 0) _seguraPico[i] -= dt;
-            else _pico[i] = Math.Max(v, _pico[i] - (float)(0.9 * dt));
-            if (_pico[i] > 0.002f) mexe = true;
         }
         return mexe;
     }
@@ -70,17 +59,11 @@ public sealed class Visualizador : FrameworkElement
         double largura = Math.Max(1, passo * 0.5);
         double h = ActualHeight;
         double raio = largura / 2;
-        double pontinho = Math.Max(1.5, largura * 0.4);
         for (int i = 0; i < n; i++)
         {
             double x = i * passo + (passo - largura) / 2;
-            double altura = Math.Max(largura, _valor[i] * (h - pontinho * 2.5));
-            dc.DrawRoundedRectangle(_cor, null, new Rect(x, h - altura, largura, altura), raio, raio);
-            if (_pico[i] > 0.02f)
-            {
-                double yp = h - Math.Max(largura, _pico[i] * (h - pontinho * 2.5)) - pontinho * 1.8;
-                dc.DrawRoundedRectangle(_corPico, null, new Rect(x, yp, largura, pontinho), pontinho / 2, pontinho / 2);
-            }
+            double altura = Math.Max(largura * 0.6, _valor[i] * h);
+            dc.DrawRoundedRectangle(_cor, null, new Rect(x, h - altura, largura, altura), Math.Min(raio, altura / 2), Math.Min(raio, altura / 2));
         }
     }
 }
