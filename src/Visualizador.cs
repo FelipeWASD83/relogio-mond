@@ -44,6 +44,8 @@ public sealed class Visualizador : FrameworkElement
         {
             float alvo = _alvo[i];
             float v = _valor[i];
+            if (!float.IsFinite(alvo)) alvo = 0;
+            if (!float.IsFinite(v)) v = 0;
             v += (float)((alvo - v) * (alvo > v ? subida : descida));
             if (v < 0.002f) v = 0;
             if (Math.Abs(v - _valor[i]) > 0.0005f) mexe = true;

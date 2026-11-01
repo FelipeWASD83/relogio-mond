@@ -54,6 +54,47 @@ public static class Testes
             Conferir(f.Max() >= 0.95, "som baixo enche as barras", $"maior={f.Max():0.00} (sem o ganho automático ficava em ~0.7)");
         }
 
+        // um NaN vindo do driver não pode matar as barras: o ganho automático guardava o NaN para sempre
+        using (var a = new CapturaAudio())
+        {
+            const int taxa = 48000, n = 56;
+            var f = new float[n];
+            var sujo = Enumerable.Range(0, 8192).Select(i => i % 500 == 0 ? float.NaN : (float)(0.5 * Math.Sin(2 * Math.PI * 1000 * i / taxa))).ToArray();
+            a.Alimentar(sujo, taxa);
+            a.Espectro(f);
+            var seno = Enumerable.Range(0, 8192).Select(i => (float)(0.5 * Math.Sin(2 * Math.PI * 1000 * i / taxa))).ToArray();
+            a.Alimentar(seno, taxa);
+            a.Espectro(f);
+            Conferir(f.All(float.IsFinite) && f.Max() >= 0.95, "NaN do driver não envenena as barras", $"maior={f.Max():0.00}");
+        }
+
+        // a captura real, com o contexto de sincronia do WPF (é nele que o NAudio avisa que a captura antiga parou):
+        // depois de fechar e abrir de novo, ela não pode se reabrir sozinha em loop
+        {
+            int aberturas = -1;
+            var th = new System.Threading.Thread(() =>
+            {
+                var disp = System.Windows.Threading.Dispatcher.CurrentDispatcher;
+                System.Threading.SynchronizationContext.SetSynchronizationContext(
+                    new System.Windows.Threading.DispatcherSynchronizationContext(disp));
+                var a = new CapturaAudio();
+                a.Ligar();
+                a.Desligar();
+                a.Ligar();
+                var t = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+                t.Tick += (_, _) => a.Garantir();
+                t.Start();
+                var fim = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(7) };
+                fim.Tick += (_, _) => { aberturas = a.Aberturas; a.Dispose(); disp.InvokeShutdown(); };
+                fim.Start();
+                System.Windows.Threading.Dispatcher.Run();
+            });
+            th.SetApartmentState(System.Threading.ApartmentState.STA);
+            th.Start();
+            th.Join();
+            Conferir(aberturas is >= 0 and <= 2, "captura não se reabre em loop", $"{aberturas} aberturas em 7 s (esperado 2: a primeira e a de depois do Desligar/Ligar)");
+        }
+
         // 2. idioma
         Idioma.Definir("pt");
         var terca = new DateTime(2026, 11, 3, 18, 42, 0);

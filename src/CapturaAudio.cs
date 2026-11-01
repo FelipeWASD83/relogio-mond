@@ -13,11 +13,12 @@ public sealed class CapturaAudio : IDisposable
     const int TamanhoFft = 4096;
     readonly float[] _anel = new float[TamanhoFft * 2];
     int _escrita;
-    long _ultimaAmostra;
+    long _ultimaAmostra, _abertaEm;
     readonly object _trava = new();
 
     WasapiLoopbackCapture? _captura;
     string? _dispositivo;
+    public int Aberturas { get; private set; }
     int _taxa = 48000;
     DateTime _proximaChecagem;
     bool _ligada;
@@ -48,7 +49,7 @@ public sealed class CapturaAudio : IDisposable
     public void Garantir(bool forcar = false)
     {
         if (!_ligada) return;
-        if (!forcar && DateTime.UtcNow < _proximaChecagem && _captura != null) return;
+        if (!forcar && DateTime.UtcNow < _proximaChecagem) return;
         _proximaChecagem = DateTime.UtcNow.AddSeconds(2);
         try
         {
@@ -60,19 +61,49 @@ public sealed class CapturaAudio : IDisposable
             var cap = new WasapiLoopbackCapture(en.GetDevice(dev.ID));
             _taxa = cap.WaveFormat.SampleRate;
             cap.DataAvailable += AoChegar;
+            // O NAudio avisa "parou" de forma assíncrona, e o aviso da captura ANTIGA chega depois da nova já
+            // aberta. Só vale o aviso da captura que está em uso; senão ele apagava o dispositivo da nova,
+            // a checagem seguinte achava que a saída tinha mudado e a captura se reabria a cada 2 s.
             cap.RecordingStopped += (_, e) =>
             {
+                if (!ReferenceEquals(cap, _captura)) return;
                 if (e.Exception != null) Log.Escrever("captura de áudio parou: " + e.Exception.Message);
                 _dispositivo = null;
             };
             cap.StartRecording();
             _captura = cap;
+            _abertaEm = Environment.TickCount64;
+            Aberturas++;
         }
         catch (Exception e)
         {
             Log.Escrever("sem captura de áudio: " + e.Message);
             Fechar();
             _proximaChecagem = DateTime.UtcNow.AddSeconds(5);
+        }
+    }
+
+    // Fecha e abre de novo a captura. Usado quando a música toca e nenhum som chega há tempo demais:
+    // a captura pode ter morrido sem avisar (troca de formato da placa, driver, saída que voltou).
+    public void Reabrir()
+    {
+        if (!_ligada) return;
+        Fechar();
+        Garantir(true);
+    }
+
+    // Há quanto tempo não chega nenhuma amostra. A captura loopback não entrega nada enquanto o
+    // Windows não toca som, então um valor alto é silêncio de verdade ou captura morta.
+    public double SegundosSemDados
+    {
+        get
+        {
+            lock (_trava)
+            {
+                // conta desde a última amostra ou desde que a captura abriu, o que for mais recente
+                long desde = Math.Max(_ultimaAmostra, _abertaEm);
+                return desde == 0 ? double.MaxValue : (Environment.TickCount64 - desde) / 1000.0;
+            }
         }
     }
 
@@ -111,7 +142,9 @@ public sealed class CapturaAudio : IDisposable
                         : bytesAmostra == 2 ? BitConverter.ToInt16(e.Buffer, o) / 32768f
                         : bytesAmostra == 4 ? BitConverter.ToInt32(e.Buffer, o) / 2147483648f : 0f;
                 }
-                _anel[_escrita] = soma / canais;
+                soma /= canais;
+                // um NaN ou infinito vindo do driver contaminaria a FFT e o ganho automático para sempre
+                _anel[_escrita] = float.IsFinite(soma) ? soma : 0f;
                 _escrita = (_escrita + 1) % _anel.Length;
             }
             if (quadros > 0) _ultimaAmostra = Environment.TickCount64;
@@ -124,7 +157,7 @@ public sealed class CapturaAudio : IDisposable
         lock (_trava)
         {
             _taxa = taxa;
-            foreach (var a in amostras) { _anel[_escrita] = a; _escrita = (_escrita + 1) % _anel.Length; }
+            foreach (var a in amostras) { _anel[_escrita] = float.IsFinite(a) ? a : 0f; _escrita = (_escrita + 1) % _anel.Length; }
             _ultimaAmostra = Environment.TickCount64;
         }
     }
@@ -190,7 +223,12 @@ public sealed class CapturaAudio : IDisposable
         double dt = _ultimaChamada == 0 ? 0 : Math.Min(1.0, (agora - _ultimaChamada) / 1000.0);
         _ultimaChamada = agora;
         float maior = 0;
-        for (int b = 0; b < n; b++) maior = Math.Max(maior, saida[b]);
+        for (int b = 0; b < n; b++)
+        {
+            if (!float.IsFinite(saida[b])) saida[b] = 0;
+            maior = Math.Max(maior, saida[b]);
+        }
+        if (!float.IsFinite(_picoLembrado)) _picoLembrado = 0;
         _picoLembrado = Math.Max(maior, _picoLembrado * (float)Math.Exp(-dt / 6.0));
         float ganho = 1f / Math.Max(_picoLembrado, 0.3f);
         for (int b = 0; b < n; b++)

@@ -77,6 +77,20 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
 - **Pausa na capa** (1.1.0): `PausaCapa` escurece (preto 72%) e mostra o pause branco com um pulinho
   de escala; sai quando o mouse entra na capa (aí valem os botões, que já mostram o play). O bloco
   da música não esmaece mais ao pausar.
+- **A captura de áudio abre uma vez e fica** (1.1.3, ele reportou "às vezes as barras param"). O NAudio avisa
+  `RecordingStopped` pelo contexto de sincronia do WPF, depois da captura nova já aberta; o aviso da antiga
+  apagava `_dispositivo` da nova e o `Garantir` a reabria a cada 2 s, para sempre (o teste de `--testes`
+  mede: eram 5 aberturas em 7 s, agora 2). O handler só vale para a captura em uso. Também: amostra
+  NaN/infinita é zerada (NaN no `_picoLembrado` matava o ganho automático até fechar o app), e o
+  `ConferirBarras` (a cada 250 ms) reabre a captura se a música toca e nenhum som chega há mais de 4 s
+  (espera dobra de 6 s até 2 min se for silêncio de verdade) e reinscreve o `CompositionTarget.Rendering`
+  se o WPF ficou 2,5 s sem desenhar. Tudo isso anota no `relogio.log`: se as barras morrerem de novo, é lá
+  que está a pista.
+- **Pausa por tela cheia só vale no monitor do relógio** (1.1.3). `SHQueryUserNotificationState` (estados
+  2 e 3) acende com tela cheia em qualquer monitor, e uma janela do Claude no monitor em pé já bastava
+  para as barras morrerem com o relógio à vista. `Nativo.TelaCheiaOcupada(hwnd)` compara o monitor da
+  janela em primeiro plano com o do relógio; o estado 4 (apresentação) continua pausando. Pausa e
+  liberação vão para o `relogio.log` com o motivo.
 - **Só a capa recebe clique.** A janela é `WS_EX_TRANSPARENT`; um timer de 50 ms tira o bit enquanto
   o mouse está em cima da capa (aí aparecem os controles) e põe de volta ao sair.
 - **Visível no Win+D** porque a janela é "owned" pela `Progman`. Conferido no build 26300 em 01/11/2026.

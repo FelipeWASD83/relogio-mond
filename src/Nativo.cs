@@ -75,10 +75,19 @@ static class Nativo
         return DwmGetWindowAttribute(h, DWMWA_CLOAKED, out var v, 4) == 0 && v != 0;
     }
 
-    // Jogo ou vídeo em tela cheia, apresentação: o relógio para de desenhar as barras.
-    public static bool TelaCheiaOcupada()
+    [DllImport("user32.dll")] public static extern IntPtr MonitorFromWindow(IntPtr h, uint flags);
+
+    // Jogo ou vídeo em tela cheia, apresentação: o relógio para de desenhar as barras. O aviso do Windows
+    // vale para qualquer monitor (um vídeo em tela cheia no monitor em pé também o acende), então para os
+    // estados 2 e 3 só conta se a janela em primeiro plano está no mesmo monitor do relógio.
+    public static bool TelaCheiaOcupada(IntPtr relogio)
     {
-        if (SHQueryUserNotificationState(out var e) == 0 && (e == 2 || e == 3 || e == 4)) return true;
-        return false;
+        if (SHQueryUserNotificationState(out var e) != 0) return false;
+        if (e == 4) return true;
+        if (e != 2 && e != 3) return false;
+        var fg = GetForegroundWindow();
+        if (fg == IntPtr.Zero || relogio == IntPtr.Zero) return true;
+        const uint MONITOR_DEFAULTTONEAREST = 2;
+        return MonitorFromWindow(fg, MONITOR_DEFAULTTONEAREST) == MonitorFromWindow(relogio, MONITOR_DEFAULTTONEAREST);
     }
 }

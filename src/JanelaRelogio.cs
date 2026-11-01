@@ -183,6 +183,39 @@ public sealed class JanelaRelogio : Window
         _m.AtualizarMidia(_estado);
         AjustarBarras();
         AcordarBarrasSeTiverSom();
+        ConferirBarras();
+    }
+
+    long _tickQuadro, _tickReabrir;
+    double _esperaReabrir = 6;
+
+    // Rede de segurança: barras que deveriam estar vivas e não estão.
+    void ConferirBarras()
+    {
+        if (!_barrasLigadas || ModoDemo) return;
+        long agora = Environment.TickCount64;
+
+        // o WPF parou de chamar o desenho (monitor que dormiu, tela bloqueada, driver de vídeo): inscreve de novo
+        if (!_dormindo && Medidor == null && agora - _tickQuadro > 2500)
+        {
+            Log.Escrever($"barras: o WPF ficou {(agora - _tickQuadro) / 1000.0:0.0} s sem desenhar, inscrevendo de novo");
+            CompositionTarget.Rendering -= Quadro;
+            _ultimoQuadro = TimeSpan.Zero;
+            _tickQuadro = agora;
+            CompositionTarget.Rendering += Quadro;
+        }
+
+        // a música toca e nenhum som chega: a captura pode ter morrido sem avisar. Abre de novo, e se
+        // era silêncio de verdade (nada chega mesmo) espaça as tentativas: 6 s, 12 s, ... no máximo 2 min
+        double semSom = _audio.SegundosSemDados;
+        if (semSom < 2) { _esperaReabrir = 6; return; }
+        if (_estado.Tocando && semSom > 4 && agora - _tickReabrir > _esperaReabrir * 1000)
+        {
+            Log.Escrever($"barras: música tocando e nenhum som há {Math.Min(semSom, 999):0} s, reabrindo a captura");
+            _tickReabrir = agora;
+            _esperaReabrir = Math.Min(_esperaReabrir * 2, 120);
+            _audio.Reabrir();
+        }
     }
 
     async System.Threading.Tasks.Task AtualizarClima()
@@ -208,6 +241,7 @@ public sealed class JanelaRelogio : Window
             _parado = 0;
             if (!ModoDemo) _audio.Ligar();
             _ultimoQuadro = TimeSpan.Zero;
+            _tickQuadro = Environment.TickCount64;
             CompositionTarget.Rendering += Quadro;
         }
         else if (!querer && _barrasLigadas)
@@ -231,6 +265,7 @@ public sealed class JanelaRelogio : Window
     void Quadro(object? s, EventArgs e)
     {
         var t = ((RenderingEventArgs)e).RenderingTime;
+        _tickQuadro = Environment.TickCount64;
         if (t == _ultimoQuadro) return; // o WPF às vezes chama duas vezes no mesmo quadro
         double dt = _ultimoQuadro == TimeSpan.Zero ? 1 / 60.0 : (t - _ultimoQuadro).TotalSeconds;
         _ultimoQuadro = t;
@@ -267,10 +302,11 @@ public sealed class JanelaRelogio : Window
     {
         if (!_barrasLigadas || !_dormindo) return;
         _audio.Garantir();
-        if (_audio.Nivel() < 0.0005) return;
+        if (_audio.Nivel() < 0.0001) return;
         _dormindo = false;
         _parado = 0;
         _ultimoQuadro = TimeSpan.Zero;
+        _tickQuadro = Environment.TickCount64;
         CompositionTarget.Rendering += Quadro;
     }
 
@@ -299,9 +335,10 @@ public sealed class JanelaRelogio : Window
     void Vigiar()
     {
         bool pausar = false;
+        string motivo = "";
         if (_cfg.PausarEmTelaCheia)
         {
-            if (Nativo.TelaCheiaOcupada()) pausar = true;
+            if (Nativo.TelaCheiaOcupada(_hwnd)) { pausar = true; motivo = "tela cheia no monitor do relógio"; }
             else
             {
                 var fg = Nativo.GetForegroundWindow();
@@ -310,11 +347,14 @@ public sealed class JanelaRelogio : Window
                     && Nativo.GetWindowRect(fg, out var r) && Nativo.GetWindowRect(_hwnd, out var eu))
                 {
                     pausar = r.Left <= eu.Left && r.Top <= eu.Top && r.Right >= eu.Right && r.Bottom >= eu.Bottom;
+                    if (pausar) motivo = "janela em primeiro plano cobrindo o relógio";
                 }
             }
         }
         if (pausar != _pausado)
         {
+            // fica no log para o caso de as barras "pararem": se foi isto, o motivo aparece aqui
+            Log.Escrever(pausar ? "barras pausadas: " + motivo : "barras liberadas");
             _pausado = pausar;
             AjustarBarras();
         }

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.3 (01/11/2026)
+
+**Corrigido**
+
+- As barras paravam sempre que havia um app em tela cheia (ou maximizado cobrindo o monitor inteiro) em QUALQUER monitor, como um vídeo no monitor em pé, mesmo com o relógio à vista no principal. Agora só pausam se a tela cheia está no mesmo monitor do relógio. Cada pausa e liberação fica anotada no `relogio.log`, com o motivo.
+- As barras às vezes paravam de funcionar. A captura do som se reabria sozinha a cada 2 segundos depois de qualquer troca (música pausando e voltando, saída de som mudando, tela cheia saindo) e, nessa bagunça, podia ficar sem receber som. Agora ela abre uma vez e fica.
+- Um valor inválido vindo do driver de som (NaN) travava as barras até fechar o relógio. Agora é ignorado.
+- Rede de segurança: se a música está tocando e nenhum som chega por mais de 4 segundos, o relógio reabre a captura sozinho (e anota no `relogio.log`). Se o Windows parar de pedir o desenho das barras (monitor que dormiu, tela bloqueada), ele pede de novo.
+- Música bem baixa agora também acorda as barras depois de um silêncio.
+
 ## 1.1.2 (01/11/2026)
 
 **Mudou**
