@@ -1,0 +1,10 @@
+# compilado (o iniciar.pyw recompila sozinho na cópia de desenvolvimento)
+app/
+src/bin/
+src/obj/
+
+# configuração, log e atualizações de quem usa
+dados/
+
+# a Anurati é só para uso pessoal: cada PC baixa a sua (iniciar.pyw)
+fontes/Anurati*

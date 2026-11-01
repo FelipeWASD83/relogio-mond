@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- Sem RelogioMond.exe: binário novo sem assinatura morre no Smart App Control.
+         O app roda pelo dotnet.exe (assinado), chamado pelo iniciar.pyw. -->
+    <UseAppHost>false</UseAppHost>
+    <AssemblyName>RelogioMond</AssemblyName>
+    <RootNamespace>RelogioMond</RootNamespace>
+    <StartupObject>RelogioMond.Programa</StartupObject>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\fontes\Quicksand-*.ttf" Link="fontes\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\fontes\OFL.txt" Link="fontes\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Resource Include="..\icone\icone.ico" Link="relogio-mond.ico" />
+  </ItemGroup>
+
+</Project>

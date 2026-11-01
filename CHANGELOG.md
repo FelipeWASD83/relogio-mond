@@ -1,0 +1,17 @@
+# Changelog
+
+## 1.0.0 (01/11/2026)
+
+**Novo**
+
+- Relógio de área de trabalho no estilo Mond: dia da semana com a fonte Anurati, data, hora e clima.
+- Na Anurati, que não tem acento, o Ç ganha um traço embaixo do C e o Á um traço em cima do A.
+- Música tocando pelo controle de mídia do Windows: capa, título, artista e minutagem com barra de progresso.
+- Visualizador de barras que escuta o som da saída padrão e troca sozinho quando a saída muda.
+- Botões de anterior, tocar/pausar e próxima ao passar o mouse na capa.
+- Clima atual pelo Open-Meteo, atualizado a cada 15 minutos.
+- Português e inglês, automático pelo idioma do Windows ou escolhido no menu.
+- Fica no centro do monitor principal, um pouco acima do meio, atrás das janelas e visível no Win+D.
+- As barras param com jogo ou vídeo em tela cheia e quando uma janela cobre o relógio.
+- Menu no ícone da bandeja, iniciar com o Windows, `config.json` aplicado na hora.
+- Procurar e instalar atualização pelas releases do GitHub, com o SHA-256 conferido e volta automática se a versão nova não abrir.
