@@ -1,6 +1,10 @@
 ﻿# Publica a versão atual do Relógio Mond como release no GitHub (é ela que o "Procurar atualização" baixa).
 # Antes: subir a versão em versao.json e CHANGELOG.md, commitar e dar push.
 # Precisa do gh logado (gh auth login) com permissão no repositório. Publicar é decisão do Felipe.
+#
+# -SoGerar <pasta>: não fala com o GitHub nem exige commit enviado. Monta relogio-mond-<versão>.zip na pasta, do
+# último commit, como a ilha, o Fundo Vivo e os cursores fazem; é o que o setup do Desktop Glow usa.
+param([string]$SoGerar = '')
 $ErrorActionPreference = 'Stop'
 $raiz = Split-Path -Parent $PSScriptRoot
 Set-Location $raiz
@@ -18,14 +22,16 @@ $repo = $info.repositorio
 $changelog = Get-Content (Join-Path $raiz 'CHANGELOG.md') -Raw -Encoding UTF8
 if ($changelog -notmatch "## $([regex]::Escape($versao)) ") { throw "O CHANGELOG.md não tem a seção da versão $versao." }
 
-if ((Rodar git @('status', '--porcelain')).saida) { throw 'Há mudanças não commitadas. Commite antes de publicar.' }
-$r = Rodar git @('fetch', '-q', 'origin')
-if ($r.codigo -ne 0) { throw "Não deu para falar com o GitHub (git fetch): $($r.saida)" }
 $local = (Rodar git @('rev-parse', 'HEAD')).saida
-$r = Rodar git @('rev-parse', '@{u}')
-if ($r.codigo -ne 0) { throw 'Este ramo não está ligado ao GitHub. Rode: git push -u origin main' }
-if ($local -ne $r.saida) { throw 'O commit atual ainda não foi enviado (git push) ou está atrás do GitHub.' }
-if ((Rodar gh @('release', 'view', "v$versao", '--repo', $repo)).codigo -eq 0) { throw "A release v$versao já existe." }
+if (-not $SoGerar) {
+    if ((Rodar git @('status', '--porcelain')).saida) { throw 'Há mudanças não commitadas. Commite antes de publicar.' }
+    $r = Rodar git @('fetch', '-q', 'origin')
+    if ($r.codigo -ne 0) { throw "Não deu para falar com o GitHub (git fetch): $($r.saida)" }
+    $r = Rodar git @('rev-parse', '@{u}')
+    if ($r.codigo -ne 0) { throw 'Este ramo não está ligado ao GitHub. Rode: git push -u origin main' }
+    if ($local -ne $r.saida) { throw 'O commit atual ainda não foi enviado (git push) ou está atrás do GitHub.' }
+    if ((Rodar gh @('release', 'view', "v$versao", '--repo', $repo)).codigo -eq 0) { throw "A release v$versao já existe." }
+}
 
 # notas: só a seção desta versão do CHANGELOG
 $linhas = $changelog -split "`r?`n"
@@ -34,8 +40,9 @@ $inicio = [array]::IndexOf($linhas, $achou)
 $notas = @()
 for ($i = $inicio + 1; $i -lt $linhas.Length; $i++) { if ($linhas[$i] -match '^## ') { break }; $notas += $linhas[$i] }
 
-$tmp = Join-Path $env:TEMP "relogio-mond-release-$versao"
-if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
+$tmp = if ($SoGerar) { [IO.Path]::GetFullPath($SoGerar) } else { Join-Path $env:TEMP "relogio-mond-release-$versao" }
+if (-not $SoGerar -and (Test-Path $tmp)) { Remove-Item $tmp -Recurse -Force }
+if ($SoGerar -and (Test-Path (Join-Path $tmp 'relogio-mond'))) { Remove-Item (Join-Path $tmp 'relogio-mond') -Recurse -Force }
 $pasta = Join-Path $tmp 'relogio-mond'
 New-Item -ItemType Directory -Force $pasta | Out-Null
 $arqNotas = Join-Path $tmp 'notas.md'
@@ -66,7 +73,14 @@ foreach ($fora in @('src', 'fontes', '.gitignore', 'CLAUDE.md')) {
 Get-ChildItem (Join-Path $pasta 'app') -Filter *.pdb | Remove-Item -Force
 $zip = Join-Path $tmp "relogio-mond-$versao.zip"
 Add-Type -AssemblyName System.IO.Compression.FileSystem
+if (Test-Path $zip) { Remove-Item $zip -Force }
 [IO.Compression.ZipFile]::CreateFromDirectory($pasta, $zip, [IO.Compression.CompressionLevel]::Optimal, $true)
+if ($SoGerar) {
+    Remove-Item $pasta -Recurse -Force
+    Remove-Item (Join-Path $tmp 'fonte.tar') -Force -ErrorAction SilentlyContinue
+    Write-Host "Pacote pronto (sem publicar): $zip"
+    exit 0
+}
 
 Write-Host "Publicando v$versao em $repo com $zip"
 $r = Rodar gh @('release', 'create', "v$versao", $zip, '--repo', $repo, '--title', "Relógio Mond $versao", '--notes-file', $arqNotas, '--target', $local)
