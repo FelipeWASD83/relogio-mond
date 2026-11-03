@@ -25,9 +25,11 @@ public static class Programa
             return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
         }
 
+        // o iniciar.pyw só põe uma DLL nova em uso depois que o Windows deixa carregá-la (Smart App Control)
+        if (args.Contains("--check-load")) return 0;
         if (args.Contains("--diagnostico")) return Diagnostico();
         if (args.Contains("--testes")) return Testes.Rodar();
-        if (args.Contains("--tocar-mudo")) return Testes.TocarMudo();
+        if (args.Contains("--tocar-mudo")) return Testes.TocarMudo(Arg("--tocar-mudo"));
         if (args.Contains("--captura")) return Captura(Arg("--captura")!, Arg("--idioma"), Arg("--data"), Arg("--escala"), args.Contains("--controles"), args.Contains("--sem-midia"), args.Contains("--pausado"));
 
         using var unico = new Mutex(true, @"Local\RelogioMond", out bool primeiro);

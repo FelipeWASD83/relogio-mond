@@ -8,3 +8,6 @@ dados/
 
 # a Anurati é só para uso pessoal: cada PC baixa a sua (iniciar.pyw)
 fontes/Anurati*
+
+# saída temporária do compilador do iniciar.pyw
+build/

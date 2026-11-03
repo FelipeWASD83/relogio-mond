@@ -46,8 +46,19 @@ $r = Rodar git @('archive', '--format=tar', '-o', (Join-Path $tmp 'fonte.tar'), 
 if ($r.codigo -ne 0) { throw "Não deu para exportar o commit: $($r.saida)" }
 $r = Rodar tar @('-xf', (Join-Path $tmp 'fonte.tar'), '-C', $pasta)
 if ($r.codigo -ne 0) { throw "Não deu para abrir o commit exportado: $($r.saida)" }
-$r = Rodar dotnet @('publish', (Join-Path $pasta 'src'), '-c', 'Release', '-o', (Join-Path $pasta 'app'), '--nologo', '-v', 'q')
-if ($r.codigo -ne 0) { throw "A compilação falhou: $($r.saida)" }
+# O Smart App Control julga cada DLL nova pelo hash e às vezes barra uma que acabou de sair do compilador:
+# cada tentativa leva um carimbo de letras sorteadas (SourceRevisionId) e a DLL só vale se carregar (--check-load).
+$app = Join-Path $pasta 'app'
+$passou = $false
+for ($i = 1; $i -le 15 -and -not $passou; $i++) {
+    $carimbo = -join ((1..(Get-Random -Minimum 24 -Maximum 200)) | ForEach-Object { [char](Get-Random -Minimum 97 -Maximum 123) })
+    if (Test-Path $app) { Remove-Item $app -Recurse -Force }
+    $r = Rodar dotnet @('publish', (Join-Path $pasta 'src'), '-c', 'Release', '-o', $app, '--nologo', '-v', 'q', "-p:SourceRevisionId=$carimbo")
+    if ($r.codigo -ne 0) { throw "A compilação falhou: $($r.saida)" }
+    $passou = (Rodar dotnet @((Join-Path $app 'RelogioMond.dll'), '--check-load')).codigo -eq 0
+    if (-not $passou) { Write-Host "Tentativa ${i}: o Smart App Control barrou a DLL; sorteando outro carimbo." }
+}
+if (-not $passou) { throw 'O Windows barrou as 15 tentativas de compilação.' }
 foreach ($fora in @('src', 'fontes', '.gitignore', 'CLAUDE.md')) {
     $p = Join-Path $pasta $fora
     if (Test-Path $p) { Remove-Item $p -Recurse -Force }

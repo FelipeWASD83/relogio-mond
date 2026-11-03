@@ -31,15 +31,24 @@
           </Grid.ColumnDefinitions>
 
           <Grid x:Name="Capa" Width="80" Height="80" VerticalAlignment="Center" Background="Transparent">
-            <Border x:Name="CapaFundo" CornerRadius="6" Background="#33FFFFFF">
-              <Path Data="M 8,0 L 18,3 L 18,7.5 L 10.5,5.2 L 10.5,19 A 5,4.2 0 1 1 8,15.4 Z"
-                    Fill="#CCFFFFFF" Stretch="Uniform" Width="24" HorizontalAlignment="Center" VerticalAlignment="Center" />
-            </Border>
-            <Border x:Name="CapaImagem" CornerRadius="6">
-              <Border.Background>
-                <ImageBrush x:Name="CapaPincel" Stretch="UniformToFill" />
-              </Border.Background>
-            </Border>
+            <!-- a arte da capa fica num grupo só para a troca de faixa poder deslizar e escalar tudo junto -->
+            <Grid x:Name="CapaArte" RenderTransformOrigin="0.5,0.5">
+              <Grid.RenderTransform>
+                <TransformGroup>
+                  <ScaleTransform x:Name="CapaEscalaTroca" />
+                  <TranslateTransform x:Name="CapaDeslocTroca" />
+                </TransformGroup>
+              </Grid.RenderTransform>
+              <Border x:Name="CapaFundo" CornerRadius="6" Background="#33FFFFFF">
+                <Path Data="M 8,0 L 18,3 L 18,7.5 L 10.5,5.2 L 10.5,19 A 5,4.2 0 1 1 8,15.4 Z"
+                      Fill="#CCFFFFFF" Stretch="Uniform" Width="24" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+              <Border x:Name="CapaImagem" CornerRadius="6">
+                <Border.Background>
+                  <ImageBrush x:Name="CapaPincel" Stretch="UniformToFill" />
+                </Border.Background>
+              </Border>
+            </Grid>
             <!-- música pausada: a capa escurece e aparece o ícone de pause por cima -->
             <Border x:Name="PausaCapa" CornerRadius="6" Background="#B8000000" Opacity="0" IsHitTestVisible="False">
               <Path x:Name="IconePausaGrande" Data="M 0,0 H 5 V 22 H 0 Z M 11,0 H 16 V 22 H 11 Z" Fill="White"
@@ -66,8 +75,15 @@
           </Grid>
 
           <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
-            <TextBlock x:Name="Titulo" FontSize="18" Foreground="White" TextTrimming="CharacterEllipsis" />
-            <TextBlock x:Name="Artista" FontSize="13" Foreground="#C8FFFFFF" Margin="0,1,0,0" TextTrimming="CharacterEllipsis" />
+            <Grid x:Name="CelulaTextos">
+              <StackPanel x:Name="Textos">
+                <StackPanel.RenderTransform>
+                  <TranslateTransform x:Name="TextosDeslocTroca" />
+                </StackPanel.RenderTransform>
+                <TextBlock x:Name="Titulo" FontSize="18" Foreground="White" TextTrimming="CharacterEllipsis" />
+                <TextBlock x:Name="Artista" FontSize="13" Foreground="#C8FFFFFF" Margin="0,1,0,0" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+            </Grid>
             <Grid x:Name="LinhaTempo" Margin="0,8,0,0" Background="Transparent">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />

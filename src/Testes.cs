@@ -176,17 +176,17 @@ public static class Testes
     }
 
     // O processo filho do teste: toca um WAV mudo com título, artista e capa por até 40 s.
-    public static int TocarMudo()
+    public static int TocarMudo(string? titulo = null)
     {
         Task.Run(async () =>
         {
-            var wav = Path.Combine(Path.GetTempPath(), "relogio-mond-mudo.wav");
+            var wav = Path.Combine(Path.GetTempPath(), titulo == null ? "relogio-mond-mudo.wav" : "relogio-mond-mudo-b.wav");
             EscreverWavMudo(wav, 30);
             var player = new MediaPlayer { Volume = 0, IsMuted = true };
             var item = new MediaPlaybackItem(MediaSource.CreateFromStorageFile(await StorageFile.GetFileFromPathAsync(wav)));
             var props = item.GetDisplayProperties();
             props.Type = MediaPlaybackType.Music;
-            props.MusicProperties.Title = TituloTeste;
+            props.MusicProperties.Title = titulo ?? TituloTeste;
             props.MusicProperties.Artist = "Relógio Mond";
             var capa = Path.Combine(Caminhos.Raiz, "icone", "icone.png");
             if (File.Exists(capa)) props.Thumbnail = RandomAccessStreamReference.CreateFromFile(await StorageFile.GetFileFromPathAsync(capa));

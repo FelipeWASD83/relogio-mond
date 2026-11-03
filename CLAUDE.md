@@ -107,6 +107,19 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
   `Controls.IsPlaybackPositionEnabled`. Testado com o player mudo (`--testes`) e com o mouse de verdade
   (arrastou a 90% e a faixa foi ao fim). **Teste com o mouse pelo PowerShell: ele vê coordenadas
   virtualizadas (÷ 1,25 a 125%); passar pixel de tela direto erra o alvo.**
+- **Troca de faixa no jeito da ilha** (1.3.0, `ContentSwap.cs` de lá): `Mostrador.IniciarTroca`. O que estava na tela
+  vira cópia por cima (capa em `Capa`, texto em `CelulaTextos`), sai em 70% do tempo (curva 0,4/0/1/1) deslizando
+  6 DIP (capa, encolhe a 0,6) e 22 DIP (texto) para o lado oposto ao da entrada; o novo entra em 280/320 ms
+  com atraso de 12% (curva 0,16/1/0,3/1), a capa com 0,6 -> 1,08 -> 1. Direção: o último botão da capa apertado
+  nos últimos 4 s (anterior = -1, próxima = +1), senão +1. Detecta pela mudança de título/artista com a faixa
+  anterior já na tela; capa que chega depois ganha fade de 260 ms. Visto em quadros capturados do relógio real
+  (player mudo duplo, `--tocar-mudo "Título"`); com duas sessões tocando ao mesmo tempo o relógio alterna entre elas.
+- **O Smart App Control barra DLL compilada aqui, por hash** (1.3.0; 0x800711C7, o relógio fechava sem abrir e
+  o `iniciar.log` dizia "fechou com o código 3762504530"). `compilar_se_preciso` (iniciar.pyw) compila em
+  `build\publish` com `-p:SourceRevisionId=<letras sorteadas>`, roda `dotnet RelogioMond.dll --check-load`
+  (sai com 0 logo no começo do `Main`; se o Windows barrar, nem chega lá) e só então copia para `app\`; barrou?
+  sorteia outro carimbo (até 15). O `publicar-versao.ps1` faz igual. **Qualquer `dotnet publish` solto para
+  testar também pode gerar DLL barrada**: usar o `app\` do iniciar.pyw para rodar teste.
 - **Só a capa recebe clique.** A janela é `WS_EX_TRANSPARENT`; um timer de 50 ms tira o bit enquanto
   o mouse está em cima da capa (aí aparecem os controles) e põe de volta ao sair.
 - **Visível no Win+D** porque a janela é "owned" pela `Progman`. Conferido no build 26300 em 01/11/2026.

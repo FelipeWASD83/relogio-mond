@@ -8,7 +8,7 @@ Fica preso na área de trabalho: atrás de todas as janelas, visível no Win+D, 
 barra de tarefas nem no Alt+Tab, e o clique passa direto para os ícones de baixo. Só duas partes
 respondem ao mouse: a capa (passando por cima aparecem os botões de anterior, tocar/pausar e
 próxima) e a barra da minutagem (clique ou arraste para pular para outro ponto da faixa, se o
-player deixar). Com a música pausada, a capa escurece e fica com um ícone de pause branco por cima.
+player deixar). Ao trocar de faixa, a capa e o texto antigos saem deslizando e os novos entram do outro lado. Com a música pausada, a capa escurece e fica com um ícone de pause branco por cima.
 
 Em português e em inglês (segue o idioma do Windows, ou escolha pelo menu).
 

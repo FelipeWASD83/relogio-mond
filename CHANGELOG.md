@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0 (02/11/2026)
+
+**Novo**
+
+- Animação de troca de faixa, a mesma da ilha: a capa, o título e o artista antigos saem deslizando e sumindo (a capa também encolhe) enquanto os novos entram pelo lado oposto, a capa com um leve estouro. "Próxima" empurra para a esquerda e "anterior" para a direita (apertando os botões da capa); sem botão, é como se fosse a próxima. A capa que chega um instante depois do título entra com um fade.
+
+**Corrigido**
+
+- O Windows (Smart App Control) às vezes barrava a DLL recém-compilada e o relógio fechava sem abrir. Agora o `iniciar.pyw` compila com um carimbo sorteado, confere se o Windows deixa carregar a DLL (`--check-load`) e, se barrar, sorteia outro carimbo e compila de novo. O `publicar-versao.ps1` faz o mesmo no pacote da release.
+
 ## 1.2.0 (02/11/2026)
 
 **Novo**

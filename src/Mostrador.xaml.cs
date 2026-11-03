@@ -26,15 +26,19 @@ public partial class Mostrador : UserControl
     TimeSpan _duracao;
     bool _podeBuscar, _arrastando, _sobreTrilho;
     double _fracaoArraste;
+    int _pulouDir = 1;
+    long _pulouEm;
+    int _geracaoTroca;
+    FrameworkElement? _fantasmaCapa, _fantasmaTexto;
 
     public Mostrador()
     {
         InitializeComponent();
         CarregarFontes();
         IconeTocar.Data = IconePlay;
-        BotaoAnterior.MouseLeftButtonUp += (_, e) => { e.Handled = true; PediuAnterior?.Invoke(); };
+        BotaoAnterior.MouseLeftButtonUp += (_, e) => { e.Handled = true; _pulouDir = -1; _pulouEm = Environment.TickCount64; PediuAnterior?.Invoke(); };
         BotaoTocar.MouseLeftButtonUp += (_, e) => { e.Handled = true; PediuTocar?.Invoke(); };
-        BotaoProxima.MouseLeftButtonUp += (_, e) => { e.Handled = true; PediuProxima?.Invoke(); };
+        BotaoProxima.MouseLeftButtonUp += (_, e) => { e.Handled = true; _pulouDir = 1; _pulouEm = Environment.TickCount64; PediuProxima?.Invoke(); };
         LinhaTempo.MouseLeftButtonDown += AoApertarTrilho;
         LinhaTempo.MouseMove += AoMoverTrilho;
         LinhaTempo.MouseLeftButtonUp += AoSoltarTrilho;
@@ -116,15 +120,23 @@ public partial class Mostrador : UserControl
         }
         if (!m.Tem) return;
 
+        bool haviaFaixa = Titulo.Text.Length > 0 || Artista.Text.Length > 0;
+        bool faixaNova = haviaFaixa && (m.Titulo.Length > 0 || m.Artista.Length > 0)
+                         && (Titulo.Text != m.Titulo || Artista.Text != m.Artista);
+        if (faixaNova && _opacidadeAlvo > 0.5) IniciarTroca(Titulo.Text, Artista.Text, CapaPincel.ImageSource);
         if (Titulo.Text != m.Titulo) Titulo.Text = m.Titulo;
         if (Artista.Text != m.Artista) Artista.Text = m.Artista;
         Artista.Visibility = string.IsNullOrWhiteSpace(m.Artista) ? Visibility.Collapsed : Visibility.Visible;
 
         if (!ReferenceEquals(_capaAtual, m.Capa))
         {
+            bool chegouDepois = _capaAtual == null && m.Capa != null && haviaFaixa;
             _capaAtual = m.Capa;
             CapaPincel.ImageSource = m.Capa;
             CapaImagem.Visibility = m.Capa != null ? Visibility.Visible : Visibility.Hidden;
+            // a capa costuma chegar um pouco depois do título: entra com um fade em vez de pular
+            if (chegouDepois && _opacidadeAlvo > 0.5)
+                CapaImagem.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(260)) { EasingFunction = new SineEase() });
         }
 
         IconeTocar.Data = m.Tocando ? IconePausa : IconePlay;
@@ -222,6 +234,123 @@ public partial class Mostrador : UserControl
         return r;
     }
 
+    // ---- troca de faixa, no jeito da ilha (ContentSwap): o conteúdo velho sai deslizando e some, o novo entra
+    // pelo outro lado um instante depois (12% da duração). "Próxima" empurra para a esquerda, "anterior" para a
+    // direita (um botão apertado nos últimos 4 s decide; senão é a próxima). A capa também encolhe ao sair e
+    // entra com um leve estouro (0,6 -> 1,08 -> 1).
+    static readonly KeySpline CurvaSaida = new(0.4, 0, 1, 1);
+    static readonly KeySpline CurvaEntrada = new(0.16, 1, 0.3, 1);
+
+    static DoubleAnimationUsingKeyFrames Quadros(double ms, double atrasoMs, KeySpline curva, params (double fracao, double valor)[] pontos)
+    {
+        var a = new DoubleAnimationUsingKeyFrames
+        {
+            Duration = TimeSpan.FromMilliseconds(ms),
+            BeginTime = TimeSpan.FromMilliseconds(atrasoMs),
+            FillBehavior = FillBehavior.HoldEnd,
+        };
+        foreach (var (f, v) in pontos)
+            a.KeyFrames.Add(f <= 0 ? new LinearDoubleKeyFrame(v, KeyTime.FromPercent(0))
+                                   : new SplineDoubleKeyFrame(v, KeyTime.FromPercent(f), curva));
+        return a;
+    }
+
+    static TextBlock CopiaDoTexto(TextBlock modelo, string texto) => new()
+    {
+        Text = texto, FontSize = modelo.FontSize, FontFamily = modelo.FontFamily, FontWeight = modelo.FontWeight,
+        Foreground = modelo.Foreground, Margin = modelo.Margin, TextTrimming = modelo.TextTrimming,
+    };
+
+    void LimparTroca()
+    {
+        _geracaoTroca++;
+        if (_fantasmaCapa != null) Capa.Children.Remove(_fantasmaCapa);
+        if (_fantasmaTexto != null) CelulaTextos.Children.Remove(_fantasmaTexto);
+        _fantasmaCapa = _fantasmaTexto = null;
+        CapaArte.BeginAnimation(OpacityProperty, null);
+        Textos.BeginAnimation(OpacityProperty, null);
+        CapaEscalaTroca.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        CapaEscalaTroca.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        CapaDeslocTroca.BeginAnimation(TranslateTransform.XProperty, null);
+        TextosDeslocTroca.BeginAnimation(TranslateTransform.XProperty, null);
+        CapaArte.Opacity = Textos.Opacity = 1;
+        CapaEscalaTroca.ScaleX = CapaEscalaTroca.ScaleY = 1;
+        CapaDeslocTroca.X = TextosDeslocTroca.X = 0;
+    }
+
+    void IniciarTroca(string tituloAntigo, string artistaAntigo, ImageSource? capaAntiga)
+    {
+        LimparTroca();
+        int geracao = _geracaoTroca;
+        int dir = Environment.TickCount64 - _pulouEm < 4000 ? _pulouDir : 1;
+
+        // o que está saindo: cópias do que estava na tela, por cima do conteúdo ao vivo
+        var fCapaEscala = new ScaleTransform();
+        var fCapaDesloc = new TranslateTransform();
+        var capa = new Grid
+        {
+            IsHitTestVisible = false,
+            RenderTransformOrigin = new Point(0.5, 0.5),
+            RenderTransform = new TransformGroup { Children = { fCapaEscala, fCapaDesloc } },
+        };
+        capa.Children.Add(new Border { CornerRadius = new CornerRadius(6), Background = CapaFundo.Background });
+        if (capaAntiga != null)
+            capa.Children.Add(new Border { CornerRadius = new CornerRadius(6), Background = new ImageBrush(capaAntiga) { Stretch = Stretch.UniformToFill } });
+        Capa.Children.Insert(Capa.Children.IndexOf(CapaArte) + 1, capa);
+        _fantasmaCapa = capa;
+
+        var fTextoDesloc = new TranslateTransform();
+        var texto = new StackPanel { IsHitTestVisible = false, RenderTransform = fTextoDesloc };
+        texto.Children.Add(CopiaDoTexto(Titulo, tituloAntigo));
+        if (!string.IsNullOrWhiteSpace(artistaAntigo)) texto.Children.Add(CopiaDoTexto(Artista, artistaAntigo));
+        CelulaTextos.Children.Add(texto);
+        _fantasmaTexto = texto;
+
+        void Sair(double ms, double distancia, TranslateTransform desloc, UIElement elemento, ScaleTransform? escala)
+        {
+            double dur = ms * 0.7;
+            desloc.BeginAnimation(TranslateTransform.XProperty, Quadros(dur, 0, CurvaSaida, (0, 0), (1, -dir * distancia)));
+            elemento.BeginAnimation(OpacityProperty, Quadros(dur, 0, CurvaSaida, (0, 1), (1, 0)));
+            if (escala != null)
+            {
+                var e = Quadros(dur, 0, CurvaSaida, (0, 1), (1, 0.6));
+                escala.BeginAnimation(ScaleTransform.ScaleXProperty, e);
+                escala.BeginAnimation(ScaleTransform.ScaleYProperty, e);
+            }
+        }
+
+        DoubleAnimationUsingKeyFrames? maisLonga = null;
+        void Entrar(double ms, double distancia, TranslateTransform desloc, UIElement elemento, ScaleTransform? escala)
+        {
+            double atraso = ms * 0.12;
+            // valores de partida: durante o atraso a animação ainda não vale
+            desloc.X = dir * distancia;
+            elemento.Opacity = 0;
+            var x = Quadros(ms, atraso, CurvaEntrada, (0, dir * distancia), (1, 0));
+            desloc.BeginAnimation(TranslateTransform.XProperty, x);
+            elemento.BeginAnimation(OpacityProperty, Quadros(ms, atraso, CurvaEntrada, (0, 0), (1, 1)));
+            if (escala != null)
+            {
+                escala.ScaleX = escala.ScaleY = 0.6;
+                var e = Quadros(ms, atraso, CurvaEntrada, (0, 0.6), (0.7, 1.08), (1, 1));
+                escala.BeginAnimation(ScaleTransform.ScaleXProperty, e);
+                escala.BeginAnimation(ScaleTransform.ScaleYProperty, e);
+            }
+            if (maisLonga == null || ms > maisLonga.Duration.TimeSpan.TotalMilliseconds) maisLonga = x;
+        }
+
+        Sair(280, 6, fCapaDesloc, capa, fCapaEscala);
+        Entrar(280, 6, CapaDeslocTroca, CapaArte, CapaEscalaTroca);
+        Sair(320, 22, fTextoDesloc, texto, null);
+        Entrar(320, 22, TextosDeslocTroca, Textos, null);
+
+        // o texto é o mais demorado: quando ele acaba, tira as cópias e devolve tudo ao estado normal
+        maisLonga!.Completed += (_, _) =>
+        {
+            if (geracao == _geracaoTroca) LimparTroca();
+        };
+    }
+
     static string Tempo(TimeSpan t) => t.TotalHours >= 1
         ? $"{(int)t.TotalHours}:{t.Minutes:00}:{t.Seconds:00}"
         : $"{(int)t.TotalMinutes}:{t.Seconds:00}";
@@ -248,6 +377,7 @@ public partial class Mostrador : UserControl
     // Para a captura em PNG: põe tudo no estado final, sem esperar animação.
     public void PularAnimacoes(bool controles = false)
     {
+        LimparTroca();
         BlocoMidia.BeginAnimation(OpacityProperty, null);
         BlocoMidia.Opacity = _opacidadeAlvo;
         Controles.BeginAnimation(OpacityProperty, null);

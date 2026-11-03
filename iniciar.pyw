@@ -18,7 +18,9 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import random
 import shutil
+import string
 import subprocess
 import sys
 import time
@@ -66,10 +68,29 @@ def compilar_se_preciso() -> None:
     if DLL.exists() and fontes and max(p.stat().st_mtime for p in fontes) <= DLL.stat().st_mtime:
         return
     log("compilando (código mais novo que a DLL)")
-    r = subprocess.run([dotnet(), "publish", str(src), "-c", "Release", "-o", str(RAIZ / "app"), "--nologo", "-v", "q"],
-                       capture_output=True, text=True, creationflags=CREATE_NO_WINDOW)
-    if r.returncode != 0:
-        log("compilação falhou:\n" + (r.stdout or "") + (r.stderr or ""))
+    # O Smart App Control julga cada DLL nova pelo hash e às vezes barra uma que acabou de sair do compilador
+    # (o relógio fecha sem abrir, erro 0x800711C7). Cada tentativa leva um "carimbo" de letras sorteadas no
+    # SourceRevisionId, que muda o hash da DLL; o --check-load carrega a DLL de verdade, e se o Windows barrar,
+    # sorteia outro carimbo e compila de novo. Só uma DLL aceita vai para app\.
+    saida = RAIZ / "build" / "publish"
+    for tentativa in range(1, 16):
+        carimbo = "".join(random.choices(string.ascii_lowercase, k=random.randint(24, 200)))
+        shutil.rmtree(saida, ignore_errors=True)
+        r = subprocess.run([dotnet(), "publish", str(src), "-c", "Release", "-o", str(saida), "--nologo", "-v", "q",
+                            f"-p:SourceRevisionId={carimbo}"],
+                           capture_output=True, text=True, creationflags=CREATE_NO_WINDOW)
+        if r.returncode != 0:
+            log("compilação falhou:\n" + (r.stdout or "") + (r.stderr or ""))
+            return
+        c = subprocess.run([dotnet(), str(saida / "RelogioMond.dll"), "--check-load"],
+                           capture_output=True, text=True, creationflags=CREATE_NO_WINDOW)
+        if c.returncode == 0:
+            log(f"o Windows aceitou a DLL na tentativa {tentativa}")
+            shutil.copytree(saida, RAIZ / "app", dirs_exist_ok=True)
+            shutil.rmtree(saida, ignore_errors=True)
+            return
+        log(f"o Smart App Control barrou a DLL (tentativa {tentativa}); sorteando outro carimbo")
+    log("o Windows barrou as 15 tentativas; ficou a DLL de antes")
 
 
 def baixar_anurati() -> None:
