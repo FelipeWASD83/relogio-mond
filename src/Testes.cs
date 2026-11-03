@@ -71,13 +71,13 @@ public static class Testes
         // o movimento das barras é o da ilha: sobe na hora (percorrido em 70 ms) e desce 0,09 por leitura
         {
             var v = new Visualizador { Quantidade = 4 };
-            v.Entrada[0] = 1;
+            for (int i = 0; i < 4; i++) v.Entrada[i] = 1;
             v.Amostrar();
             v.Passo(0.035);
             float meio = v.Valor(0);
             v.Passo(0.035);
             float cheio = v.Valor(0);
-            v.Entrada[0] = 0;
+            for (int i = 0; i < 4; i++) v.Entrada[i] = 0;
             v.Amostrar();
             v.Passo(0.07);
             float caiu = v.Valor(0);

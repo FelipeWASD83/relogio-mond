@@ -234,7 +234,7 @@ public sealed class CapturaAudio : IDisposable
         for (int b = 0; b < n; b++)
         {
             // a curva (>1) separa barra alta de baixa: mais contraste, mais "pulso"
-            saida[b] = (float)Math.Pow(Math.Clamp(saida[b] * ganho, 0f, 1f), 1.3);
+            saida[b] = (float)Math.Pow(Math.Clamp(saida[b] * ganho, 0f, 1f), 1.1);
         }
         return true;
     }

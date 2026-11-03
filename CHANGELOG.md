@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.0 (03/11/2026)
+
+**Mudou**
+
+- Visualizador de barras mais forte e mais bonito, todo branco: as barras ficaram mais altas (de 14 para 32 de altura) e mais grossas, a silhueta é suavizada entre as barras vizinhas (parece uma onda contínua, não palitos soltos), o conjunto é levemente realçado e tem um brilho branco suave por trás. O bloco da música não cresceu: o espaço entre o tempo e as barras diminuiu na mesma medida.
+- O contraste do som ficou menos achatado (curva de 1,3 para 1,1), então as barras do meio também sobem mais.
+
 ## 1.3.0 (02/11/2026)
 
 **Novo**
