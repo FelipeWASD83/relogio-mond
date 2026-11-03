@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.2 (03/11/2026)
+
+**Mudou**
+
+- Visualizador mais suave: cada barra recebe um pouco das vizinhas, então o conjunto forma uma curva contínua em vez de barras desiguais lado a lado, e a barra sobe em duas ou três leituras em vez de saltar de uma vez.
+- Graves mais certos: as barras da esquerda liam o mesmo pedaço do espectro e ficavam em degraus iguais; agora cada uma lê o seu ponto.
+
 ## 1.4.1 (03/11/2026)
 
 **Mudou**

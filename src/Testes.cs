@@ -81,8 +81,8 @@ public static class Testes
             v.Amostrar();
             v.Passo(0.07);
             float caiu = v.Valor(0);
-            Conferir(Math.Abs(meio - 0.5f) < 0.02f && cheio > 0.99f && Math.Abs(caiu - 0.91f) < 0.01f,
-                "barras com o movimento da ilha", $"35 ms={meio:0.00} 70 ms={cheio:0.00} depois de 1 leitura de queda={caiu:0.00} (esperado 0,50 / 1,00 / 0,91)");
+            Conferir(Math.Abs(meio - 0.35f) < 0.02f && Math.Abs(cheio - 0.70f) < 0.02f && Math.Abs(caiu - 0.61f) < 0.02f,
+                "barras suaves, no movimento da ilha", $"35 ms={meio:0.00} 70 ms={cheio:0.00} depois de 1 leitura de queda={caiu:0.00} (esperado 0,35 / 0,70 / 0,61)");
         }
 
         // a captura real, com o contexto de sincronia do WPF (é nele que o NAudio avisa que a captura antiga parou):

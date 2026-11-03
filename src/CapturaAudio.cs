@@ -206,7 +206,18 @@ public sealed class CapturaAudio : IDisposable
             int i0 = Math.Max(1, (int)Math.Floor(f0 / binHz));
             int i1 = Math.Max(i0, (int)Math.Ceiling(f1 / binHz));
             double pico = 0;
-            for (int i = i0; i <= i1 && i < TamanhoFft / 2; i++) pico = Math.Max(pico, _fft[i].Magnitude);
+            if (i1 - i0 <= 1)
+            {
+                // banda mais estreita que um bin: interpola entre os dois bins em volta do centro da banda
+                double pos = Math.Sqrt(f0 * f1) / binHz;
+                int k = Math.Clamp((int)Math.Floor(pos), 1, TamanhoFft / 2 - 2);
+                double fr = Math.Clamp(pos - k, 0, 1);
+                pico = _fft[k].Magnitude * (1 - fr) + _fft[k + 1].Magnitude * fr;
+            }
+            else
+            {
+                for (int i = i0; i <= i1 && i < TamanhoFft / 2; i++) pico = Math.Max(pico, _fft[i].Magnitude);
+            }
             // magnitude normalizada pela janela de Hann (ganho 0.5) e pelo tamanho
             double amp = pico / (TamanhoFft * 0.25);
             double db = 20 * Math.Log10(amp + 1e-9);

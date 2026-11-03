@@ -105,6 +105,11 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
   assentadas embaixo, pontinho de pico (segura 0,35 s, cai 0,9 por segundo), sem brilho e sem suavização entre
   vizinhas, no movimento da ilha. Altura 36 com margem de cima 8 (a janela não cresce). A curva do ganho em
   `CapturaAudio` ficou em 1,1 (era 1,3 até a 1.3).
+- **Barras suaves** (1.4.2, ele mandou um print: "ele não tá muito suave"). Três causas: (1) bandas de graves mais
+  estreitas que um bin da FFT (11,7 Hz a 48 kHz) repetiam o mesmo bin e viravam degraus; agora a banda estreita
+  interpola a magnitude no centro (`CapturaAudio.Espectro`); (2) vizinhas desiguais: `Visualizador.Amostrar`
+  mistura 1-2-1 com as vizinhas (x1,06); (3) a subida de uma vez a 30 Hz picava: agora 70% da distância por
+  leitura (`Subida`). A queda (0,09 por leitura) e os 70 ms de interpolação seguem da ilha.
 - **Minutagem clicável** (1.2.0). A linha da minutagem (`LinhaTempo`, mais 4 px em cima e embaixo) tira o
   `WS_EX_TRANSPARENT` como a capa (`VerMouse` no `JanelaRelogio`, que também segura enquanto arrasta).
   Arrastar mostra o destino (barra mais grossa, bolinha, tempo) e soltar chama `Midia.Buscar`

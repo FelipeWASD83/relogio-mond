@@ -13,12 +13,14 @@ public sealed class Visualizador : FrameworkElement
     public const double IntervaloAmostra = 1.0 / 30;
     const double TempoInterpolacao = 0.070;
     const float Queda = 0.09f;
+    const float Subida = 0.7f;   // parte da distância que a barra sobe a cada leitura (antes: tudo, de uma vez)
 
     float[] _alvo = Array.Empty<float>();   // entrada: o espectro cru
     float[] _suave = Array.Empty<float>();  // depois da subida na hora e da queda lenta
     float[] _de = Array.Empty<float>();     // onde a barra estava quando chegou a leitura
     float[] _valor = Array.Empty<float>();  // o que está desenhado
     float[] _pico = Array.Empty<float>();
+    float[] _vizinhas = Array.Empty<float>();
     double[] _seguraPico = Array.Empty<double>();
     double _t = TempoInterpolacao;
     readonly Brush _cor;
@@ -35,6 +37,7 @@ public sealed class Visualizador : FrameworkElement
             _de = new float[value];
             _valor = new float[value];
             _pico = new float[value];
+            _vizinhas = new float[value];
             _seguraPico = new double[value];
             InvalidateVisual();
         }
@@ -53,14 +56,25 @@ public sealed class Visualizador : FrameworkElement
     // Uma leitura nova do espectro (já em Entrada): ~30 vezes por segundo.
     public void Amostrar()
     {
-        for (int i = 0; i < _valor.Length; i++)
+        int n = _valor.Length;
+        // a silhueta fica contínua: cada barra recebe um pouco de cada vizinha (1-2-1), senão as barras
+        // ao lado ficam desiguais e o conjunto parece serrilhado
+        for (int i = 0; i < n; i++)
         {
-            float alvo = float.IsFinite(_alvo[i]) ? Math.Clamp(_alvo[i], 0, 1) : 0;
-            _suave[i] = alvo >= _suave[i] ? alvo : Math.Max(alvo, _suave[i] - Queda);
+            float a = Limpar(_alvo[i]);
+            float e = i > 0 ? Limpar(_alvo[i - 1]) : a, d = i < n - 1 ? Limpar(_alvo[i + 1]) : a;
+            _vizinhas[i] = Math.Min(1f, (0.5f * a + 0.25f * (e + d)) * 1.06f);
+        }
+        for (int i = 0; i < n; i++)
+        {
+            float alvo = _vizinhas[i];
+            _suave[i] = alvo >= _suave[i] ? _suave[i] + (alvo - _suave[i]) * Subida : Math.Max(alvo, _suave[i] - Queda);
             _de[i] = _valor[i];
         }
         _t = 0;
     }
+
+    static float Limpar(float v) => float.IsFinite(v) ? Math.Clamp(v, 0, 1) : 0;
 
     // Derruba tudo de uma vez (música parou, janela coberta): sem esperar a queda lenta.
     public void Zerar()
