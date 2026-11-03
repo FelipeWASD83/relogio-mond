@@ -91,6 +91,22 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
   para as barras morrerem com o relógio à vista. `Nativo.TelaCheiaOcupada(hwnd)` compara o monitor da
   janela em primeiro plano com o do relógio; o estado 4 (apresentação) continua pausando. Pausa e
   liberação vão para o `relogio.log` com o motivo.
+- **A tela cheia tem que ocupar o monitor inteiro e não ser a área de trabalho** (1.2.0). Clicar no desktop
+  deixa a `Progman` em primeiro plano e o `SHQueryUserNotificationState` segue em 2 (ocupado), o que pausava
+  as barras (reproduzido: log "tela cheia no monitor do relógio"). `Nativo.TelaCheiaOcupada` agora ignora
+  `EhAreaDeTrabalho(fg)` e exige a janela cobrindo o monitor (folga de 2 px).
+- **Barras no movimento da ilha** (1.2.0, pedido dele): `Visualizador.Amostrar` roda a ~30 Hz (`Quadro` acumula o
+  `dt`), sobe na hora e desce 0,09 por leitura (`Queda`), `Passo` percorre de uma leitura à outra em 70 ms em
+  linha reta, a barra cresce do centro e o piso é 0,2. O ganho automático continua em `CapturaAudio`. Teste
+  `barras com o movimento da ilha` no `--testes` (0,50 / 1,00 / 0,91).
+- **Minutagem clicável** (1.2.0). A linha da minutagem (`LinhaTempo`, mais 4 px em cima e embaixo) tira o
+  `WS_EX_TRANSPARENT` como a capa (`VerMouse` no `JanelaRelogio`, que também segura enquanto arrasta).
+  Arrastar mostra o destino (barra mais grossa, bolinha, tempo) e soltar chama `Midia.Buscar`
+  (`TryChangePlaybackPositionAsync` com o `StartTime` somado). Depois do pulo, a posição do destino vale por até
+  2 s ou até o player avisar uma posição perto dele (`_seguraAte`), senão a barra voltava. `PodeBuscar` vem de
+  `Controls.IsPlaybackPositionEnabled`. Testado com o player mudo (`--testes`) e com o mouse de verdade
+  (arrastou a 90% e a faixa foi ao fim). **Teste com o mouse pelo PowerShell: ele vê coordenadas
+  virtualizadas (÷ 1,25 a 125%); passar pixel de tela direto erra o alvo.**
 - **Só a capa recebe clique.** A janela é `WS_EX_TRANSPARENT`; um timer de 50 ms tira o bit enquanto
   o mouse está em cima da capa (aí aparecem os controles) e põe de volta ao sair.
 - **Visível no Win+D** porque a janela é "owned" pela `Progman`. Conferido no build 26300 em 01/11/2026.

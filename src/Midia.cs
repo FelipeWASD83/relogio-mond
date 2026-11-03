@@ -17,6 +17,7 @@ public sealed class EstadoMidia
     public bool Tocando { get; init; }
     public TimeSpan Posicao { get; init; }
     public TimeSpan Duracao { get; init; }
+    public bool PodeBuscar { get; init; }
 }
 
 // Lê o que está tocando pelo controle de mídia do Windows (o mesmo do pop-up de
@@ -33,9 +34,12 @@ public sealed class Midia
     int _tentativasCapa;
 
     // posição informada pela sessão e quando, para andar o relógio entre uma notícia e outra
-    TimeSpan _posBase, _duracao;
+    TimeSpan _posBase, _duracao, _inicio;
     DateTimeOffset _posQuando;
-    bool _tocando;
+    bool _tocando, _podeBuscar;
+    // depois de um pulo na minutagem, a sessão demora a avisar a posição nova: até lá vale o destino pedido
+    TimeSpan _destino;
+    DateTimeOffset _seguraAte;
     double _velocidade = 1;
 
     public async Task Iniciar()
@@ -86,12 +90,27 @@ public sealed class Midia
             _tocando = info?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
             _velocidade = info?.PlaybackRate ?? 1;
             if (_velocidade <= 0) _velocidade = 1;
+            _podeBuscar = info?.Controls.IsPlaybackPositionEnabled ?? false;
             var tl = _sessao.GetTimelineProperties();
             if (tl != null)
             {
+                _inicio = tl.StartTime;
                 _duracao = tl.EndTime - tl.StartTime;
-                _posBase = tl.Position - tl.StartTime;
-                _posQuando = tl.LastUpdatedTime;
+                var posNova = tl.Position - tl.StartTime;
+                var quando = tl.LastUpdatedTime;
+                bool segurando = DateTimeOffset.Now < _seguraAte;
+                if (segurando)
+                {
+                    // o player já chegou perto do destino? então solta; senão ainda é a posição de antes do pulo
+                    var aviso = posNova + (_tocando ? TimeSpan.FromTicks((long)((DateTimeOffset.Now - quando).Ticks * _velocidade)) : TimeSpan.Zero);
+                    segurando = (aviso - _destino).Duration() > TimeSpan.FromSeconds(2);
+                }
+                if (!segurando)
+                {
+                    _seguraAte = default;
+                    _posBase = posNova;
+                    _posQuando = quando;
+                }
             }
         }
         catch (Exception e)
@@ -191,7 +210,34 @@ public sealed class Midia
             Tocando = _tocando,
             Posicao = pos,
             Duracao = _duracao,
+            PodeBuscar = _podeBuscar && _duracao > TimeSpan.Zero,
         };
+    }
+
+    // Pula para a posição (0 = começo da faixa). Mostra o destino na hora; o Windows leva um instante
+    // para avisar a posição nova.
+    public async void Buscar(TimeSpan posicao)
+    {
+        var s = _sessao;
+        if (s == null || !_podeBuscar) return;
+        posicao = TimeSpan.FromTicks(Math.Clamp(posicao.Ticks, 0, _duracao.Ticks));
+        _destino = posicao;
+        _seguraAte = DateTimeOffset.Now.AddSeconds(2);
+        _posBase = posicao;
+        _posQuando = DateTimeOffset.Now;
+        try
+        {
+            if (!await s.TryChangePlaybackPositionAsync((_inicio + posicao).Ticks))
+            {
+                Log.Escrever("o player recusou o pulo na minutagem");
+                _seguraAte = default;
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Escrever("pulo na minutagem: " + e.Message);
+            _seguraAte = default;
+        }
     }
 
     public async void Anterior() { try { if (_sessao != null) await _sessao.TrySkipPreviousAsync(); } catch (Exception e) { Log.Escrever("anterior: " + e.Message); } }

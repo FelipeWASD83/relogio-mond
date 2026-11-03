@@ -68,6 +68,23 @@ public static class Testes
             Conferir(f.All(float.IsFinite) && f.Max() >= 0.95, "NaN do driver não envenena as barras", $"maior={f.Max():0.00}");
         }
 
+        // o movimento das barras é o da ilha: sobe na hora (percorrido em 70 ms) e desce 0,09 por leitura
+        {
+            var v = new Visualizador { Quantidade = 4 };
+            v.Entrada[0] = 1;
+            v.Amostrar();
+            v.Passo(0.035);
+            float meio = v.Valor(0);
+            v.Passo(0.035);
+            float cheio = v.Valor(0);
+            v.Entrada[0] = 0;
+            v.Amostrar();
+            v.Passo(0.07);
+            float caiu = v.Valor(0);
+            Conferir(Math.Abs(meio - 0.5f) < 0.02f && cheio > 0.99f && Math.Abs(caiu - 0.91f) < 0.01f,
+                "barras com o movimento da ilha", $"35 ms={meio:0.00} 70 ms={cheio:0.00} depois de 1 leitura de queda={caiu:0.00} (esperado 0,50 / 1,00 / 0,91)");
+        }
+
         // a captura real, com o contexto de sincronia do WPF (é nele que o NAudio avisa que a captura antiga parou):
         // depois de fechar e abrir de novo, ela não pode se reabrir sozinha em loop
         {
@@ -136,6 +153,16 @@ public static class Testes
             await midia.Atualizar();
             var p2 = midia.Estado().Posicao;
             conferir(e.Tocando && p2 - p1 > TimeSpan.FromSeconds(1), "minutagem andando", $"{p1:m\\:ss\\.f} -> {p2:m\\:ss\\.f}");
+
+            // pulo na minutagem: o destino aparece na hora e a sessão do player confirma
+            conferir(midia.Estado().PodeBuscar, "player aceita pulo na minutagem", "PodeBuscar=" + midia.Estado().PodeBuscar);
+            midia.Buscar(TimeSpan.FromSeconds(20));
+            var logo = midia.Estado().Posicao;
+            conferir((logo - TimeSpan.FromSeconds(20)).Duration() < TimeSpan.FromSeconds(1), "destino do pulo na hora", $"{logo:m\\:ss\\.f} (esperado ~0:20)");
+            await Task.Delay(1500);
+            await midia.Atualizar();
+            var depois = midia.Estado().Posicao;
+            conferir((depois - TimeSpan.FromSeconds(21.5)).Duration() < TimeSpan.FromSeconds(2.5), "player pulou de verdade", $"{depois:m\\:ss\\.f} (esperado ~0:21)");
 
             midia.TocarPausar();
             bool tocando = true;

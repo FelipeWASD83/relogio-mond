@@ -87,6 +87,7 @@ public static class Programa
                         cap.Espectro(m.Barras.Entrada);
                     }
                     if (pausado) Array.Clear(m.Barras.Entrada);
+                    m.Barras.Amostrar();
                     for (int i = 0; i < 40; i++) m.Barras.Passo(0.1);
                 }
                 m.PularAnimacoes(controles);

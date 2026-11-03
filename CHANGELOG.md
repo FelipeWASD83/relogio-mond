@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.0 (02/11/2026)
+
+**Novo**
+
+- Dá para mudar a minutagem: clique na barra da música ou arraste. Enquanto arrasta, a barra engrossa, aparece uma bolinha e o tempo mostra o destino; ao soltar, a faixa pula. Se o player não aceita pular (transmissão ao vivo, alguns apps), a barra fica mais apagada e não responde.
+
+**Mudou**
+
+- O visualizador usa as mesmas animações da ilha: a barra sobe na hora e desce devagar, cada leitura do som é percorrida de forma lisa em 70 ms, a altura cresce a partir do centro e o piso é de 20%. O espectro agora é lido 30 vezes por segundo (antes, a cada quadro), então o relógio ficou mais leve: a mediana subiu de 88 para 150 fps na medição.
+
+**Corrigido**
+
+- As barras travavam ao clicar na área de trabalho: o Windows continua dizendo "ocupado" com a área de trabalho em primeiro plano e o relógio entendia isso como tela cheia. Agora ele ignora a área de trabalho e só pausa se a janela em primeiro plano ocupa o monitor inteiro.
+
 ## 1.1.3 (01/11/2026)
 
 **Corrigido**

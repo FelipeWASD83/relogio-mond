@@ -54,6 +54,7 @@ public sealed class JanelaRelogio : Window
         _m.PediuAnterior += _midia.Anterior;
         _m.PediuTocar += _midia.TocarPausar;
         _m.PediuProxima += _midia.Proxima;
+        _m.PediuBuscar += _midia.Buscar;
 
         SourceInitialized += AoIniciarFonte;
         // o tamanho muda (clima que chega, escala, idioma): o centro continua onde a configuração manda
@@ -257,9 +258,7 @@ public sealed class JanelaRelogio : Window
         if (!_dormindo) CompositionTarget.Rendering -= Quadro;
         _dormindo = false;
         _audio.Desligar();
-        Array.Clear(_m.Barras.Entrada);
-        _m.Barras.Passo(10);
-        _m.Barras.InvalidateVisual();
+        _m.Barras.Zerar();
     }
 
     void Quadro(object? s, EventArgs e)
@@ -275,12 +274,17 @@ public sealed class JanelaRelogio : Window
         {
             int novas = Math.Clamp((int)(48000 * dt), 1, 4096);
             _audio.Alimentar(Demo.Amostras(t.TotalSeconds - dt, novas, 48000), 48000);
-            _audio.Espectro(_m.Barras.Entrada);
         }
         else
         {
             _audio.Garantir();
+        }
+        // o espectro é lido ~30 vezes por segundo, como na ilha; entre uma leitura e outra a barra só interpola
+        if ((_acumulado += dt) >= Visualizador.IntervaloAmostra)
+        {
+            _acumulado = _acumulado > 2 * Visualizador.IntervaloAmostra ? 0 : _acumulado - Visualizador.IntervaloAmostra;
             _audio.Espectro(_m.Barras.Entrada);
+            _m.Barras.Amostrar();
         }
         if (_m.Barras.Passo(dt))
         {
@@ -295,7 +299,7 @@ public sealed class JanelaRelogio : Window
         }
     }
 
-    double _parado;
+    double _parado, _acumulado;
     bool _dormindo;
 
     void AcordarBarrasSeTiverSom()
@@ -313,21 +317,28 @@ public sealed class JanelaRelogio : Window
     void VerMouse()
     {
         if (_hwnd == IntPtr.Zero || !Nativo.GetCursorPos(out var p)) return;
-        bool emCima = false;
-        var area = _m.AreaDaCapa();
-        if (!area.IsEmpty && _m.Opacity > 0)
+        bool naCapa = false, naBusca = false;
+        if (_m.Opacity > 0)
         {
-            try { emCima = area.Contains(_m.PointFromScreen(new Point(p.X, p.Y))); } catch { }
+            try
+            {
+                var ponto = _m.PointFromScreen(new Point(p.X, p.Y));
+                naCapa = _m.AreaDaCapa() is { IsEmpty: false } capa && capa.Contains(ponto);
+                naBusca = _m.AreaDaBusca() is { IsEmpty: false } busca && busca.Contains(ponto);
+            }
+            catch { }
         }
-        // só a capa recebe clique; o resto continua atravessando para a área de trabalho
-        if (emCima == _transparenteAoClique)
+        // só a capa e a linha da minutagem recebem clique; o resto continua atravessando para a área de
+        // trabalho. Arrastando a minutagem, a janela segue pegando o mouse mesmo se ele sair da linha.
+        bool pegar = naCapa || naBusca || _m.Arrastando;
+        if (pegar == _transparenteAoClique)
         {
-            _transparenteAoClique = !emCima;
+            _transparenteAoClique = !pegar;
             var ex = (long)Nativo.GetWindowLongPtr(_hwnd, Nativo.GWL_EXSTYLE);
-            ex = emCima ? ex & ~Nativo.WS_EX_TRANSPARENT : ex | Nativo.WS_EX_TRANSPARENT;
+            ex = pegar ? ex & ~Nativo.WS_EX_TRANSPARENT : ex | Nativo.WS_EX_TRANSPARENT;
             Nativo.SetWindowLongPtr(_hwnd, Nativo.GWL_EXSTYLE, new IntPtr(ex));
         }
-        _m.MostrarControles(emCima);
+        _m.MostrarControles(naCapa);
     }
 
     // Para as barras quando ninguém consegue vê-las: jogo ou vídeo em tela cheia, ou uma

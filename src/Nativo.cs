@@ -87,7 +87,20 @@ static class Nativo
         if (e != 2 && e != 3) return false;
         var fg = GetForegroundWindow();
         if (fg == IntPtr.Zero || relogio == IntPtr.Zero) return true;
+        // clicar na área de trabalho deixa a Progman em primeiro plano e o Windows segue dizendo "ocupado":
+        // isso não é app em tela cheia
+        if (EhAreaDeTrabalho(fg)) return false;
         const uint MONITOR_DEFAULTTONEAREST = 2;
-        return MonitorFromWindow(fg, MONITOR_DEFAULTTONEAREST) == MonitorFromWindow(relogio, MONITOR_DEFAULTTONEAREST);
+        var monitor = MonitorFromWindow(fg, MONITOR_DEFAULTTONEAREST);
+        if (monitor != MonitorFromWindow(relogio, MONITOR_DEFAULTTONEAREST)) return false;
+        // e a janela precisa ocupar o monitor inteiro (com folga de 2 px)
+        var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
+        if (!GetMonitorInfo(monitor, ref info) || !GetWindowRect(fg, out var r)) return true;
+        return r.Left <= info.rcMonitor.Left + 2 && r.Top <= info.rcMonitor.Top + 2 &&
+               r.Right >= info.rcMonitor.Right - 2 && r.Bottom >= info.rcMonitor.Bottom - 2;
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct MONITORINFO { public int cbSize; public RECT rcMonitor, rcWork; public uint dwFlags; }
+    [DllImport("user32.dll")] static extern bool GetMonitorInfo(IntPtr monitor, ref MONITORINFO info);
 }

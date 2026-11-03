@@ -5,9 +5,10 @@ gigante e espaçado, a data, a hora e o clima, e embaixo a música que está toc
 título, artista, minutagem e um visualizador de barras que reage ao som de verdade.
 
 Fica preso na área de trabalho: atrás de todas as janelas, visível no Win+D, sem aparecer na
-barra de tarefas nem no Alt+Tab, e o clique passa direto para os ícones de baixo. A única parte
-que responde ao mouse é a capa: passando por cima aparecem os botões de anterior, tocar/pausar e
-próxima. Com a música pausada, a capa escurece e fica com um ícone de pause branco por cima.
+barra de tarefas nem no Alt+Tab, e o clique passa direto para os ícones de baixo. Só duas partes
+respondem ao mouse: a capa (passando por cima aparecem os botões de anterior, tocar/pausar e
+próxima) e a barra da minutagem (clique ou arraste para pular para outro ponto da faixa, se o
+player deixar). Com a música pausada, a capa escurece e fica com um ícone de pause branco por cima.
 
 Em português e em inglês (segue o idioma do Windows, ou escolha pelo menu).
 

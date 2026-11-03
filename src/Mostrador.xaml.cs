@@ -14,6 +14,7 @@ public partial class Mostrador : UserControl
     static readonly Geometry IconePausa = Geometry.Parse("M 0,0 H 3 V 11 H 0 Z M 6,0 H 9 V 11 H 6 Z");
 
     public event Action? PediuAnterior, PediuTocar, PediuProxima;
+    public event Action<TimeSpan>? PediuBuscar;
 
     public bool TemFonteAnurati { get; private set; }
 
@@ -22,6 +23,9 @@ public partial class Mostrador : UserControl
     bool _pausado, _pausaVisivel;
     double _opacidadeAlvo;
     object? _capaAtual;
+    TimeSpan _duracao;
+    bool _podeBuscar, _arrastando, _sobreTrilho;
+    double _fracaoArraste;
 
     public Mostrador()
     {
@@ -31,6 +35,12 @@ public partial class Mostrador : UserControl
         BotaoAnterior.MouseLeftButtonUp += (_, e) => { e.Handled = true; PediuAnterior?.Invoke(); };
         BotaoTocar.MouseLeftButtonUp += (_, e) => { e.Handled = true; PediuTocar?.Invoke(); };
         BotaoProxima.MouseLeftButtonUp += (_, e) => { e.Handled = true; PediuProxima?.Invoke(); };
+        LinhaTempo.MouseLeftButtonDown += AoApertarTrilho;
+        LinhaTempo.MouseMove += AoMoverTrilho;
+        LinhaTempo.MouseLeftButtonUp += AoSoltarTrilho;
+        LinhaTempo.LostMouseCapture += (_, _) => { if (_arrastando) { _arrastando = false; AtualizarTrilho(); } };
+        LinhaTempo.MouseEnter += (_, _) => { _sobreTrilho = true; AtualizarTrilho(); };
+        LinhaTempo.MouseLeave += (_, _) => { _sobreTrilho = false; AtualizarTrilho(); };
         foreach (var b in new[] { BotaoAnterior, BotaoTocar, BotaoProxima })
         {
             b.MouseEnter += (s, _) => ((Border)s!).Opacity = 0.7;
@@ -124,15 +134,92 @@ public partial class Mostrador : UserControl
         if (m.Duracao > TimeSpan.Zero)
         {
             LinhaTempo.Visibility = Visibility.Visible;
-            TempoAtual.Text = Tempo(m.Posicao);
+            _duracao = m.Duracao;
             TempoTotal.Text = Tempo(m.Duracao);
-            var trilho = ((FrameworkElement)Progresso.Parent).ActualWidth;
-            Progresso.Width = Math.Clamp(m.Posicao.TotalSeconds / m.Duracao.TotalSeconds, 0, 1) * trilho;
+            if (m.PodeBuscar != _podeBuscar)
+            {
+                _podeBuscar = m.PodeBuscar;
+                if (!_podeBuscar) _arrastando = false;
+                // player que não aceita pulo (transmissão ao vivo, alguns apps): a barra fica mais apagada
+                Progresso.Opacity = _podeBuscar ? 1 : 0.6;
+                AtualizarTrilho();
+            }
+            // arrastando, a barra e o tempo mostram o destino, não a posição de verdade
+            if (!_arrastando)
+            {
+                TempoAtual.Text = Tempo(m.Posicao);
+                MoverProgresso(Math.Clamp(m.Posicao.TotalSeconds / m.Duracao.TotalSeconds, 0, 1));
+            }
         }
         else
         {
             LinhaTempo.Visibility = Visibility.Collapsed;
+            _arrastando = false;
         }
+    }
+
+    void MoverProgresso(double fracao)
+    {
+        var largura = Trilho.ActualWidth;
+        Progresso.Width = fracao * largura;
+        Bola.Margin = new Thickness(fracao * largura - Bola.Width / 2, 0, 0, 0);
+    }
+
+    double FracaoDoMouse(MouseEventArgs e) =>
+        Trilho.ActualWidth <= 0 ? 0 : Math.Clamp(e.GetPosition(Trilho).X / Trilho.ActualWidth, 0, 1);
+
+    void MostrarArraste(double fracao)
+    {
+        _fracaoArraste = fracao;
+        MoverProgresso(fracao);
+        TempoAtual.Text = Tempo(TimeSpan.FromTicks((long)(_duracao.Ticks * fracao)));
+    }
+
+    void AoApertarTrilho(object s, MouseButtonEventArgs e)
+    {
+        if (!_podeBuscar || _duracao <= TimeSpan.Zero) return;
+        e.Handled = true;
+        _arrastando = true;
+        LinhaTempo.CaptureMouse();
+        MostrarArraste(FracaoDoMouse(e));
+        AtualizarTrilho();
+    }
+
+    void AoMoverTrilho(object s, MouseEventArgs e)
+    {
+        if (_arrastando) MostrarArraste(FracaoDoMouse(e));
+    }
+
+    void AoSoltarTrilho(object s, MouseButtonEventArgs e)
+    {
+        if (!_arrastando) return;
+        e.Handled = true;
+        MostrarArraste(FracaoDoMouse(e));
+        _arrastando = false;
+        LinhaTempo.ReleaseMouseCapture();
+        AtualizarTrilho();
+        PediuBuscar?.Invoke(TimeSpan.FromTicks((long)(_duracao.Ticks * _fracaoArraste)));
+    }
+
+    // Como na ilha: com o mouse em cima ou arrastando, o trilho engrossa (3 -> 6) e aparece a bolinha.
+    void AtualizarTrilho()
+    {
+        bool destaque = _podeBuscar && (_sobreTrilho || _arrastando);
+        foreach (var b in new[] { FundoTrilho, Progresso })
+            b.BeginAnimation(HeightProperty,
+                new DoubleAnimation(destaque ? 6 : 3, TimeSpan.FromMilliseconds(140)) { EasingFunction = new SineEase() });
+        Bola.Visibility = _arrastando ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    public bool Arrastando => _arrastando;
+
+    // Retângulo da linha da minutagem (com folga em cima e embaixo, para acertar com o mouse).
+    public Rect AreaDaBusca()
+    {
+        if (!_midiaVisivel || !_podeBuscar || LinhaTempo.Visibility != Visibility.Visible || LinhaTempo.ActualWidth <= 0) return Rect.Empty;
+        var r = LinhaTempo.TransformToAncestor(this).TransformBounds(new Rect(0, 0, LinhaTempo.ActualWidth, LinhaTempo.ActualHeight));
+        r.Inflate(0, 4);
+        return r;
     }
 
     static string Tempo(TimeSpan t) => t.TotalHours >= 1
