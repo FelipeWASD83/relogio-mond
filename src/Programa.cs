@@ -32,6 +32,14 @@ public static class Programa
         if (args.Contains("--tocar-mudo")) return Testes.TocarMudo(Arg("--tocar-mudo"));
         if (args.Contains("--captura")) return Captura(Arg("--captura")!, Arg("--idioma"), Arg("--data"), Arg("--escala"), args.Contains("--controles"), args.Contains("--sem-midia"), args.Contains("--pausado"));
 
+        // --quit / --sair: pede ao relógio aberto para fechar (o setup e os atalhos usam; a ilha tem --sair, o Fundo Vivo --quit)
+        if (args.Contains("--quit") || args.Contains("--sair"))
+        {
+            try { if (EventWaitHandle.TryOpenExisting(App.NomePedidoSair, out var aberto)) { aberto.Set(); aberto.Dispose(); } }
+            catch (Exception ex) { Console.Error.WriteLine(ex.Message); return 1; }
+            return 0;
+        }
+
         using var unico = new Mutex(true, @"Local\RelogioMond", out bool primeiro);
         if (!primeiro && !args.Contains("--medir")) return 0;
 
@@ -186,6 +194,23 @@ public sealed class App : Application
         var recado = Atualizador.RecadoDoLancador();
         if (recado != null) _bandeja.Avisar(recado);
         VigiarConfig();
+        OuvirPedidoDeSair();
+    }
+
+    public const string NomePedidoSair = @"Local\RelogioMond.Sair";
+    EventWaitHandle? _pedidoSair;
+    RegisteredWaitHandle? _esperaSair;
+
+    // `RelogioMond.dll --quit` sinaliza este evento; fecha como o "Sair" da bandeja
+    void OuvirPedidoDeSair()
+    {
+        try
+        {
+            _pedidoSair = new EventWaitHandle(false, EventResetMode.AutoReset, NomePedidoSair);
+            _esperaSair = ThreadPool.RegisterWaitForSingleObject(_pedidoSair,
+                (_, _) => Dispatcher.BeginInvoke(() => Sair(0)), null, Timeout.Infinite, true);
+        }
+        catch (Exception ex) { Log.Escrever("pedido de sair: " + ex.Message); }
     }
 
     void Salvar(Config c)
@@ -238,6 +263,8 @@ public sealed class App : Application
     void Sair(int codigo)
     {
         _codigoSaida = codigo;
+        _esperaSair?.Unregister(null);
+        _pedidoSair?.Dispose();
         _vigiaConfig?.Dispose();
         _bandeja?.Dispose();
         _janela?.Close();

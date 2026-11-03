@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.5.0 (03/11/2026)
+
+Junta as versões 1.4.0, 1.4.1 e 1.4.2, que não chegaram a ser publicadas, e acrescenta o comando de fechar.
+
+**Novo**
+
+- `--quit` (ou `--sair`) fecha o relógio que está aberto, igual ao "Sair" da bandeja: `dotnet app\RelogioMond.dll --quit`. É o mesmo comando que a ilha (`--sair`) e o Fundo Vivo (`--quit`) já têm, e é o que o setup usa para fechar os apps antes de atualizar.
+
+**Mudou**
+
+- Visualizador de barras mais forte, todo branco e sem brilho, no visual da primeira versão: barras finas assentadas embaixo, com o pontinho de pico que fica um instante e cai devagar, e mais altas que antes.
+- Barras suaves: cada barra recebe um pouco das vizinhas, a barra sobe em duas ou três leituras em vez de saltar de uma vez e os graves deixaram de ficar em degraus iguais.
+
 ## 1.4.2 (03/11/2026)
 
 **Mudou**

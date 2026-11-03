@@ -33,7 +33,7 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
 | `src/JanelaRelogio.cs` | A janela: estilos (toolwindow, noactivate, transparent, layered), dona = `Progman`, sempre `HWND_BOTTOM`, posição, laço das barras, mouse na capa, pausa em tela cheia |
 | `src/Mostrador.xaml(.cs)` | O layout (dia, data, hora, clima, e o bloco da música: capa, título, tempo, barras) |
 | `src/TextoEspacado.cs` | Texto com espaçamento entre letras e os acentos improvisados para a Anurati |
-| `src/Visualizador.cs` | As barras (sobe em ~20 ms, desce em ~120 ms; sem pontinho de pico) |
+| `src/Visualizador.cs` | As barras: visual da 1.0.0 com pontinho de pico; sobe 70% da distância a cada leitura de 30 Hz, desce 0,09 por leitura, 70 ms de interpolação |
 | `src/CapturaAudio.cs` | Loopback WASAPI (NAudio) da saída padrão, FFT de 4096, faixas logarítmicas de 40 Hz a 16 kHz e ganho automático |
 | `src/Midia.cs` | Controle de mídia do Windows (GSMTC): sessão escolhida, título, capa, minutagem interpolada, botões |
 | `src/Clima.cs` | Open-Meteo, a cada 15 min |
@@ -56,7 +56,7 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
 - **Espaçamento pelo desenho da letra** (1.0.1, ele achou o da 1.0.0 largo e desigual): o vão entre
   letras é medido entre os contornos (`BuildGeometry().Bounds`), não pela largura de avanço da fonte.
   Vírgula e ponto grudam na letra de antes. Valores atuais (1.0.2): dia 100 com vão 0.3; data e hora
-  28 e clima 19, vão 0.2. Sem pontinho de pico.
+  28 e clima 19, vão 0.2.
 - **O bloco da música inteiro é menor que o relógio** (1.1.2, com um desenho dele: retângulo pequeno
   centrado embaixo do grande; eu tinha encolhido só o visualizador e ele corrigiu: é tudo, capa,
   título e minutagem). Largura fixa de 336 (`BlocoMidia`), contra 423 do dia mais estreito (TERÇA);
@@ -102,14 +102,19 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
 - **Barras no visual da primeira versão, brancas** (1.4.1, pedido dele com um print da 1.0.0: "tira esse glow e faz
   essas barrinhas tipo a primeira versão"). A 1.4.0 tinha barras centradas com brilho, silhueta suavizada e
   degradê pela cor da capa; ele rejeitou a cor da capa e depois o brilho. Hoje: barras finas (56% do passo)
-  assentadas embaixo, pontinho de pico (segura 0,35 s, cai 0,9 por segundo), sem brilho e sem suavização entre
-  vizinhas, no movimento da ilha. Altura 36 com margem de cima 8 (a janela não cresce). A curva do ganho em
+  assentadas embaixo, pontinho de pico (segura 0,35 s, cai 0,9 por segundo), sem brilho, no movimento da ilha
+  (a suavização entre vizinhas que a 1.4.1 tirou voltou na 1.4.2, ver abaixo). Altura 36 com margem de cima 8 (a janela não cresce). A curva do ganho em
   `CapturaAudio` ficou em 1,1 (era 1,3 até a 1.3).
 - **Barras suaves** (1.4.2, ele mandou um print: "ele não tá muito suave"). Três causas: (1) bandas de graves mais
   estreitas que um bin da FFT (11,7 Hz a 48 kHz) repetiam o mesmo bin e viravam degraus; agora a banda estreita
   interpola a magnitude no centro (`CapturaAudio.Espectro`); (2) vizinhas desiguais: `Visualizador.Amostrar`
   mistura 1-2-1 com as vizinhas (x1,06); (3) a subida de uma vez a 30 Hz picava: agora 70% da distância por
   leitura (`Subida`). A queda (0,09 por leitura) e os 70 ms de interpolação seguem da ilha.
+- **`--quit` / `--sair`** (1.5.0, padrão entre os apps do setup: ilha `--sair`, Fundo Vivo `--quit`, relógio os dois). O
+  processo novo abre o evento `Local\RelogioMond.Sair` e o dispara; o relógio aberto espera nele
+  (`App.OuvirPedidoDeSair`) e chama o mesmo `Sair(0)` da bandeja. Antes o setup matava o `dotnet` pela linha de comando.
+- **Formato de release igual ao do `clave`** (`versao.json` com `versao` e `repositorio`, zip `relogio-mond-<versão>.zip`,
+  `ferramentas\publicar-versao.ps1`): é o que o `pacote-windows-bonito` espera de cada app.
 - **Minutagem clicável** (1.2.0). A linha da minutagem (`LinhaTempo`, mais 4 px em cima e embaixo) tira o
   `WS_EX_TRANSPARENT` como a capa (`VerMouse` no `JanelaRelogio`, que também segura enquanto arrasta).
   Arrastar mostra o destino (barra mais grossa, bolinha, tempo) e soltar chama `Midia.Buscar`

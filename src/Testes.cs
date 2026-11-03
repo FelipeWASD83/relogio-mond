@@ -68,7 +68,7 @@ public static class Testes
             Conferir(f.All(float.IsFinite) && f.Max() >= 0.95, "NaN do driver não envenena as barras", $"maior={f.Max():0.00}");
         }
 
-        // o movimento das barras é o da ilha: sobe na hora (percorrido em 70 ms) e desce 0,09 por leitura
+        // o movimento das barras é o da ilha: sobe 70% da distância por leitura (percorrido em 70 ms) e desce 0,09 por leitura
         {
             var v = new Visualizador { Quantidade = 4 };
             for (int i = 0; i < 4; i++) v.Entrada[i] = 1;

@@ -36,7 +36,7 @@ Tudo fica no ícone do relógio perto do relógio do Windows (clique direito):
 - **Idioma**: automático, português ou inglês
 - **Mostrar o clima**, **Relógio de 24 horas**, **Iniciar com o Windows**
 - **Editar configurações**: abre o `dados\config.json` no Bloco de Notas; salvou, o relógio muda na hora
-- **Recarregar**, **Procurar atualização**, **Sair**
+- **Recarregar**, **Procurar atualização**, **Sair** (de fora do relógio, o mesmo "Sair" é `dotnet app\RelogioMond.dll --quit`)
 
 No `config.json`:
 

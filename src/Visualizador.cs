@@ -6,8 +6,8 @@ namespace RelogioMond;
 
 // As barras. O visual é o da primeira versão: barras finas assentadas embaixo, cada uma com um pontinho de pico
 // que fica um instante e cai devagar. O movimento é o do visualizador da ilha: o espectro é lido ~30 vezes por
-// segundo (Amostrar), a barra sobe na hora e desce devagar (0,09 por leitura) e cada leitura nova é percorrida
-// em linha reta em 70 ms.
+// segundo (Amostrar), a barra sobe 70% da distância por leitura e desce devagar (0,09 por leitura) e cada leitura
+// nova é percorrida em linha reta em 70 ms.
 public sealed class Visualizador : FrameworkElement
 {
     public const double IntervaloAmostra = 1.0 / 30;
@@ -16,7 +16,7 @@ public sealed class Visualizador : FrameworkElement
     const float Subida = 0.7f;   // parte da distância que a barra sobe a cada leitura (antes: tudo, de uma vez)
 
     float[] _alvo = Array.Empty<float>();   // entrada: o espectro cru
-    float[] _suave = Array.Empty<float>();  // depois da subida na hora e da queda lenta
+    float[] _suave = Array.Empty<float>();  // depois da subida e da queda lenta
     float[] _de = Array.Empty<float>();     // onde a barra estava quando chegou a leitura
     float[] _valor = Array.Empty<float>();  // o que está desenhado
     float[] _pico = Array.Empty<float>();
