@@ -1,35 +1,28 @@
 using System;
 using System.Windows;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
 
 namespace RelogioMond;
 
-// As barras, com o mesmo movimento do visualizador da ilha: o espectro é lido ~30 vezes por segundo
-// (Amostrar), a barra sobe na hora e desce devagar (0,09 por leitura), cada leitura nova é percorrida em
-// linha reta em 70 ms (a animação implícita da ilha) e a altura cresce a partir do centro.
-// Desde a 1.4.0: silhueta suavizada entre barras vizinhas, mais alta e mais cheia, tudo branco, com um
-// brilho suave por trás.
+// As barras. O visual é o da primeira versão: barras finas assentadas embaixo, cada uma com um pontinho de pico
+// que fica um instante e cai devagar. O movimento é o do visualizador da ilha: o espectro é lido ~30 vezes por
+// segundo (Amostrar), a barra sobe na hora e desce devagar (0,09 por leitura) e cada leitura nova é percorrida
+// em linha reta em 70 ms.
 public sealed class Visualizador : FrameworkElement
 {
     public const double IntervaloAmostra = 1.0 / 30;
     const double TempoInterpolacao = 0.070;
-    const float Piso = 0.14f;
     const float Queda = 0.09f;
-    const double LarguraDaBarra = 0.62; // fração do passo entre barras
 
     float[] _alvo = Array.Empty<float>();   // entrada: o espectro cru
     float[] _suave = Array.Empty<float>();  // depois da subida na hora e da queda lenta
     float[] _de = Array.Empty<float>();     // onde a barra estava quando chegou a leitura
     float[] _valor = Array.Empty<float>();  // o que está desenhado
-    float[] _vizinhas = Array.Empty<float>();
+    float[] _pico = Array.Empty<float>();
+    double[] _seguraPico = Array.Empty<double>();
     double _t = TempoInterpolacao;
-
     readonly Brush _cor;
-    readonly DropShadowEffect _brilho = new()
-    {
-        Color = Colors.White, BlurRadius = 16, ShadowDepth = 0, Opacity = 0.5, RenderingBias = RenderingBias.Performance,
-    };
+    readonly Brush _corPico;
 
     public int Quantidade
     {
@@ -41,7 +34,8 @@ public sealed class Visualizador : FrameworkElement
             _suave = new float[value];
             _de = new float[value];
             _valor = new float[value];
-            _vizinhas = new float[value];
+            _pico = new float[value];
+            _seguraPico = new double[value];
             InvalidateVisual();
         }
     }
@@ -52,33 +46,21 @@ public sealed class Visualizador : FrameworkElement
     public Visualizador()
     {
         Quantidade = 56;
-        var branco = new SolidColorBrush(Color.FromArgb(245, 255, 255, 255)); branco.Freeze(); _cor = branco;
-        Effect = _brilho;
+        var c = new SolidColorBrush(Color.FromArgb(235, 255, 255, 255)); c.Freeze(); _cor = c;
+        var p = new SolidColorBrush(Color.FromArgb(150, 255, 255, 255)); p.Freeze(); _corPico = p;
     }
 
     // Uma leitura nova do espectro (já em Entrada): ~30 vezes por segundo.
     public void Amostrar()
     {
-        int n = _valor.Length;
-        // a silhueta fica contínua: cada barra recebe um pouco das vizinhas (como as ondas do espectro) e o
-        // conjunto é levemente realçado, para não parecer um monte de palitos soltos nem fraco
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < _valor.Length; i++)
         {
-            float a = Limpar(_alvo[i]);
-            float e = i > 0 ? Limpar(_alvo[i - 1]) : a, d = i < n - 1 ? Limpar(_alvo[i + 1]) : a;
-            float s = 0.5f * a + 0.25f * (e + d);
-            _vizinhas[i] = Math.Min(1f, MathF.Pow(Math.Max(s, a * 0.85f), 0.88f) * 1.12f);
-        }
-        for (int i = 0; i < n; i++)
-        {
-            float alvo = _vizinhas[i];
+            float alvo = float.IsFinite(_alvo[i]) ? Math.Clamp(_alvo[i], 0, 1) : 0;
             _suave[i] = alvo >= _suave[i] ? alvo : Math.Max(alvo, _suave[i] - Queda);
             _de[i] = _valor[i];
         }
         _t = 0;
     }
-
-    static float Limpar(float v) => float.IsFinite(v) ? Math.Clamp(v, 0, 1) : 0;
 
     // Derruba tudo de uma vez (música parou, janela coberta): sem esperar a queda lenta.
     public void Zerar()
@@ -87,6 +69,8 @@ public sealed class Visualizador : FrameworkElement
         Array.Clear(_suave);
         Array.Clear(_de);
         Array.Clear(_valor);
+        Array.Clear(_pico);
+        Array.Clear(_seguraPico);
         _t = TempoInterpolacao;
         InvalidateVisual();
     }
@@ -103,6 +87,12 @@ public sealed class Visualizador : FrameworkElement
             float v = _de[i] + (_suave[i] - _de[i]) * f;
             if (Math.Abs(v - _valor[i]) > 0.0005f || Math.Abs(_suave[i] - v) > 0.0005f) mexe = true;
             _valor[i] = v;
+
+            // pontinho de pico: segura 0,35 s no ponto mais alto e cai devagar
+            if (v >= _pico[i]) { _pico[i] = v; _seguraPico[i] = 0.35; }
+            else if (_seguraPico[i] > 0) _seguraPico[i] -= dt;
+            else _pico[i] = Math.Max(v, _pico[i] - (float)(0.9 * dt));
+            if (_pico[i] > 0.002f) mexe = true;
         }
         return mexe;
     }
@@ -112,15 +102,20 @@ public sealed class Visualizador : FrameworkElement
         int n = _valor.Length;
         if (n == 0 || ActualWidth <= 0) return;
         double passo = ActualWidth / n;
-        double largura = Math.Max(1, passo * LarguraDaBarra);
+        double largura = Math.Max(1, passo * 0.56);
         double h = ActualHeight;
         double raio = largura / 2;
+        double pontinho = Math.Max(1.5, largura * 0.5);
         for (int i = 0; i < n; i++)
         {
             double x = i * passo + (passo - largura) / 2;
-            double altura = Math.Max(largura, (Piso + (1 - Piso) * _valor[i]) * h);
-            double r = Math.Min(raio, altura / 2);
-            dc.DrawRoundedRectangle(_cor, null, new Rect(x, (h - altura) / 2, largura, altura), r, r);
+            double altura = Math.Max(largura, _valor[i] * (h - pontinho * 2.5));
+            dc.DrawRoundedRectangle(_cor, null, new Rect(x, h - altura, largura, altura), raio, raio);
+            if (_pico[i] > 0.02f)
+            {
+                double yp = h - Math.Max(largura, _pico[i] * (h - pontinho * 2.5)) - pontinho * 1.8;
+                dc.DrawRoundedRectangle(_corPico, null, new Rect(x, yp, largura, pontinho), pontinho / 2, pontinho / 2);
+            }
         }
     }
 }

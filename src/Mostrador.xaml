@@ -101,7 +101,7 @@
           </StackPanel>
         </Grid>
 
-        <local:Visualizador x:Name="Barras" Height="32" Margin="0,12,0,0" />
+        <local:Visualizador x:Name="Barras" Height="36" Margin="0,8,0,0" />
       </StackPanel>
     </StackPanel>
   </Grid>

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.1 (03/11/2026)
+
+**Mudou**
+
+- O visualizador de barras volta ao visual da primeira versão: barras finas assentadas embaixo, cada uma com um pontinho de pico que fica um instante e cai devagar. O brilho saiu. O movimento continua o da ilha (sobe na hora, desce devagar), e as barras seguem mais altas que na 1.3 (altura 36).
+
 ## 1.4.0 (03/11/2026)
 
 **Mudou**

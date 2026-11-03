@@ -99,11 +99,12 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
   `dt`), sobe na hora e desce 0,09 por leitura (`Queda`), `Passo` percorre de uma leitura à outra em 70 ms em
   linha reta, a barra cresce do centro e o piso é 0,2. O ganho automático continua em `CapturaAudio`. Teste
   `barras com o movimento da ilha` no `--testes` (0,50 / 1,00 / 0,91).
-- **Barras mais fortes e bonitas, todas brancas** (1.4.0, pedido dele; ele rejeitou a cor da capa nas barras, então
-  nada de degradê colorido). `Visualizador`: altura 32 (`Mostrador.xaml`, com a margem de cima 12 e a de baixo do bloco
-  10 para a janela não crescer), barra a 62% do passo, piso 0,14, cada leitura mistura 25% de cada vizinha e
-  realça (`pow 0,88 * 1,12`), `DropShadowEffect` branco de brilho (blur 16, 50%). Curva do ganho em
-  `CapturaAudio` de 1,3 para 1,1. Medido 170 fps de mediana com o brilho.
+- **Barras no visual da primeira versão, brancas** (1.4.1, pedido dele com um print da 1.0.0: "tira esse glow e faz
+  essas barrinhas tipo a primeira versão"). A 1.4.0 tinha barras centradas com brilho, silhueta suavizada e
+  degradê pela cor da capa; ele rejeitou a cor da capa e depois o brilho. Hoje: barras finas (56% do passo)
+  assentadas embaixo, pontinho de pico (segura 0,35 s, cai 0,9 por segundo), sem brilho e sem suavização entre
+  vizinhas, no movimento da ilha. Altura 36 com margem de cima 8 (a janela não cresce). A curva do ganho em
+  `CapturaAudio` ficou em 1,1 (era 1,3 até a 1.3).
 - **Minutagem clicável** (1.2.0). A linha da minutagem (`LinhaTempo`, mais 4 px em cima e embaixo) tira o
   `WS_EX_TRANSPARENT` como a capa (`VerMouse` no `JanelaRelogio`, que também segura enquanto arrasta).
   Arrastar mostra o destino (barra mais grossa, bolinha, tempo) e soltar chama `Midia.Buscar`
