@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.1 (04/11/2026)
+
+**Mudou**
+
+- Ícone novo, da família do Desktop Glow: uma lua crescente com os ponteiros do relógio dentro (Mond é lua em alemão).
+
 ## 1.5.0 (03/11/2026)
 
 Junta as versões 1.4.0, 1.4.1 e 1.4.2, que não chegaram a ser publicadas, e acrescenta o comando de fechar.
