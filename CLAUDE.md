@@ -114,7 +114,7 @@ atalho / Run do Windows ─► pythonw iniciar.pyw ─► dotnet app\RelogioMond
   processo novo abre o evento `Local\RelogioMond.Sair` e o dispara; o relógio aberto espera nele
   (`App.OuvirPedidoDeSair`) e chama o mesmo `Sair(0)` da bandeja. Antes o setup matava o `dotnet` pela linha de comando.
 - **Formato de release igual ao do `clave`** (`versao.json` com `versao` e `repositorio`, zip `relogio-mond-<versão>.zip`,
-  `ferramentas\publicar-versao.ps1`): é o que o `pacote-windows-bonito` espera de cada app.
+  `ferramentas\publicar-versao.ps1`): é o que o `desktop-glow` espera de cada app.
 - **Minutagem clicável** (1.2.0). A linha da minutagem (`LinhaTempo`, mais 4 px em cima e embaixo) tira o
   `WS_EX_TRANSPARENT` como a capa (`VerMouse` no `JanelaRelogio`, que também segura enquanto arrasta).
   Arrastar mostra o destino (barra mais grossa, bolinha, tempo) e soltar chama `Midia.Buscar`
